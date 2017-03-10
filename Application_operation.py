@@ -11,10 +11,6 @@
 
 import MySQLdb
 
-"""
-'alter table application change project_id project_id tinyint(4) DEFAULT NULL auto_increment primarykey;'
-"""
-
 
 class DbInitConnect(object):
     # 初始化基本变量
@@ -48,6 +44,8 @@ class DbInitConnect(object):
         for self.row in self.resultCursor.fetchall():
             print self.row
 
+    def finally_close_connect(self):
+        self.DBcon.close()
 
 class GroupOperation(DbInitConnect):
     def __init__(self):
