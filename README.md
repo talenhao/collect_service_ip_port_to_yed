@@ -4,12 +4,12 @@
 ----
 
 ----
-收集信息=》存储
-yum install -y python-netifaces MySQL-python
-2017-02-27
-    2.6.6版本不支持subprocess.check_out,修改为subprocess.Popen(["ls", "-a"], stdout=subprocess.PIPE).communicate()[0]
-2017-02-28
-    使用re重写shell命令部分
+        收集信息=》存储
+        yum install -y python-netifaces MySQL-python
+        2017-02-27
+            2.6.6版本不支持subprocess.check_out,修改为subprocess.Popen(["ls", "-a"], stdout=subprocess.PIPE).communicate()[0]
+        2017-02-28
+            使用re重写shell命令部分
     重写数据导入方法
     优化端口扫描方式，节省2/3时间
 2017-03-01
