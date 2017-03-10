@@ -27,6 +27,8 @@ yum install -y python-netifaces MySQL-python
     改写appcolect为类方法
     调整数据录入逻辑
     ip地址不同版本系统获取问题
+2017-03-10
+    去掉127.0.0.1监听地址防止端口相同的业务出现错误
 初步解决：
     程序匹配更多的项目类型，不仅限于java类的tomcat
 未解决：
@@ -86,7 +88,10 @@ class AppListen(AppOp):
             ps_aux_result_text = ps_aux_result.communicate()[0]  # .decode('utf-8')
             # 2.pattern&compile
             # ps_aux_pattern_tomcat = 'Dcatalina.home=/[-\w]+/%s/tomcat' % self.project
-            ps_aux_pattern_tomcat = 'Dcatalina.home=/[-\w]+/%s/tomcat|\./bin/%s\ -c\ conf/%s\.conf' % (self.project,self.project,self.project)
+            ps_aux_pattern_tomcat = 'Dcatalina.home=/[-\w]+/%s/tomcat' \
+                                    '|\./bin/%s\ -c\ conf/%s\.conf' \
+                                    '|java\ .*%s-.*\.jar.*zoo.cfg.*'\
+                                    % (self.project,self.project,self.project,self.project)
             print("Pattern is %s" % ps_aux_pattern_tomcat)
             ps_aux_compile = re.compile(ps_aux_pattern_tomcat)
             # 3.match object
@@ -116,6 +121,7 @@ class AppListen(AppOp):
             else:
                 self.card_ip_list.append(card_ip_address)
         # self.card_ip_list_all = self.card_ip_list.remove('127.0.0.1')
+        print("Local collect IP: %s" % self.card_ip_list)
         return self.card_ip_list
 
     def listen_ports(self, pids):
@@ -282,7 +288,7 @@ def app_l_collect():
                                       to_db_conipport_project
                                       )
         app_listen_instance.end_line(project_item)
-    app_listen_instance.finallyCloseConnect()
+    app_listen_instance.finally_close_connect()
 
 if __name__ == "__main__":
     app_l_collect()
