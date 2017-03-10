@@ -58,6 +58,8 @@ class AppListen(AppOp):
     
     def __init__(self):
         AppOp.__init__(self)
+        # self.projecttable = "application"
+        # self.group_table = "appgroup"
         self.projects_name_list = []
     def project_list(self):
         """
@@ -120,7 +122,7 @@ class AppListen(AppOp):
                 print("%s is not have ip" % interface_card)
             else:
                 self.card_ip_list.append(card_ip_address)
-        # self.card_ip_list_all = self.card_ip_list.remove('127.0.0.1')
+        self.card_ip_list_all = self.card_ip_list.remove('127.0.0.1')
         print("Local collect IP: %s" % self.card_ip_list)
         return self.card_ip_list
 
