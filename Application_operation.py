@@ -11,8 +11,6 @@
 
 import MySQLdb
 
-# import datetime,os,sys
-
 """
 'alter table application change project_id project_id tinyint(4) DEFAULT NULL auto_increment primarykey;'
 """
@@ -29,10 +27,10 @@ class DbInitConnect(object):
     # 连接数据库
     
     def Connect(self):
-        self.DBcon=MySQLdb.connect(host=self.host,
+        self.DBcon = MySQLdb.connect(host=self.host,
                                port = self.port,
                                user = self.username,
-                               passwd = self.password,
+                               passwd=self.password,
                                db = self.db)
         return self.DBcon
         # 返回指针
@@ -45,7 +43,7 @@ class DbInitConnect(object):
     def ShowDatabases(self):
         self.Cursor()
         sql_cmd='show create database yed_collect'
-        #print(self.DBcon,self.resultCursor)
+        # print(self.DBcon,self.resultCursor)
         self.resultCursor.execute(sql_cmd)
         for self.row in self.resultCursor.fetchall():
             print self.row
@@ -56,12 +54,12 @@ class GroupOperation(DbInitConnect):
         # 初始父类的生成器
         # super(DbInitConnect, self).__init__()
         DbInitConnect.__init__(self)
-        self.grouptable = "appgroup"
+        self.group_table = "appgroup"
         self.Cursor()
         # print(self.host,self.DBcon,self.resultCursor,self.resultCursor.description)
         
-    def showGroup(self):
-        sql_cmd= 'SELECT groupname,parent_group from %s' % self.grouptable
+    def ShowGroup(self):
+        sql_cmd= 'SELECT groupname,parent_group from %s' % self.group_table
         self.resultCursor.execute(sql_cmd)
         for self.row in self.resultCursor.fetchall():
             print(self.row)
@@ -69,14 +67,14 @@ class GroupOperation(DbInitConnect):
     def addGroup(self,groupname,parent_groupname='NULL'):
         self.groupname=groupname
         self.parent_groupname=parent_groupname
-        sql_cmd='INSERT INTO %s (groupname, parent_group) VALUES ("%s", "%s")' % (self.grouptable, self.groupname, self.parent_groupname)
+        sql_cmd = 'INSERT INTO %s (groupname, parent_group) VALUES ("%s", "%s")' % (self.group_table, self.groupname, self.parent_groupname)
         print(sql_cmd)
         self.resultCursor.execute(sql_cmd)
         self.DBcon.commit()
         
     def delGroup(self,groupname):
         self.groupname = groupname
-        sql_cmd = 'DELETE FROM %s where groupname="%s";' % (self.grouptable, self.groupname)
+        sql_cmd = 'DELETE FROM %s where groupname="%s";' % (self.group_table, self.groupname)
         print(sql_cmd)
         self.resultCursor.execute(sql_cmd)
         self.DBcon.commit()
@@ -84,7 +82,7 @@ class GroupOperation(DbInitConnect):
     def modifyGroup(self,groupname,new_groupname):
         self.groupname = groupname
         self.newgroupname = new_groupname
-        sql_cmd = 'UPDATE %s SET groupname="%s" where groupname="%s";' %(self.grouptable, self.newgroupname, self.groupname)
+        sql_cmd = 'UPDATE %s SET groupname="%s" where groupname="%s";' %(self.group_table, self.newgroupname, self.groupname)
         print(sql_cmd)
         self.resultCursor.execute(sql_cmd)
         self.DBcon.commit()
@@ -100,7 +98,7 @@ class applicationOperation(GroupOperation):
         GroupOperation.__init__(self)
         self.projecttable = "application"
     def showApplication(self):
-        sql_cmd= 'SELECT projectname,groupname from %s,%s where %s.groupid=%s.group_id' % (self.grouptable,self.projecttable,self.grouptable,self.projecttable)
+        sql_cmd= 'SELECT projectname,groupname from %s,%s where %s.groupid=%s.group_id' % (self.group_table,self.projecttable,self.group_table,self.projecttable)
         self.resultCursor.execute(sql_cmd)
         for self.row in self.resultCursor.fetchall():
             print(self.row)
@@ -110,7 +108,7 @@ class applicationOperation(GroupOperation):
         self.projectname=projectname
         if self.groupname is '':
             self.groupname='in'
-        sql_cmd='SELECT groupid from %s where groupname="%s"' % (self.grouptable, self.groupname)
+        sql_cmd='SELECT groupid from %s where groupname="%s"' % (self.group_table, self.groupname)
         print(sql_cmd)
         self.resultCursor.execute(sql_cmd)
         self.groupid = self.resultCursor.fetchone()[0]
@@ -184,17 +182,17 @@ if __name__ == "__main__":
             continue
         print('process')
         if choiceitem == 0 and choiceitem2 == 0 :
-            Groupitem.showGroup()
+            Groupitem.ShowGroup()
         elif choiceitem == 0 and choiceitem2 == 1:
             groupinput=raw_input("请输入group名称：\n")
             parentgroupinput=raw_input("请输入父group名称，留空不添加父组：\n")
             Groupitem.addGroup(groupinput,parentgroupinput)
         elif choiceitem == 0 and choiceitem2 ==2:
-            Groupitem.showGroup()
+            Groupitem.ShowGroup()
             groupinput = raw_input("请输入要删除的项目名：\n").strip()
             Groupitem.delGroup(groupinput)
         elif choiceitem == 0 and choiceitem2 == 3:
-            Groupitem.showGroup()
+            Groupitem.ShowGroup()
             groupinput = raw_input("老项目名：\n").strip()
             newgroupinput = raw_input("new项目名").strip()
             Groupitem.modifyGroup(groupinput,newgroupinput)
