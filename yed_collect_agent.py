@@ -128,6 +128,7 @@ class AppListen(AppOp):
                 print("%s is not have ip" % interface_card)
             else:
                 self.card_ip_list.append(card_ip_address)
+        # 如果服务监听端口无重复可以打开
         self.card_ip_list_all = self.card_ip_list.remove('127.0.0.1')
         print("Local collect IP: %s" % self.card_ip_list)
         return self.card_ip_list
