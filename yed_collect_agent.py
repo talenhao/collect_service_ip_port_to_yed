@@ -94,9 +94,8 @@ class AppListen(AppOp):
         ps_aux_result_text = ps_aux_result.communicate()[0]  # .decode('utf-8')
             # 2.pattern&compile
             # ps_aux_pattern_tomcat = 'Dcatalina.home=/[-\w]+/%s/tomcat' % self.project
-        ps_aux_pattern_tomcat = 'Dcatalina.home=/[-\w]+/%s/(tomcat|server|log)' \
-                                    '|\./bin/%s\ -c\ conf/%s\.conf' \
-                                    '|./bin/%s'\
+        ps_aux_pattern_tomcat = 'Dcatalina.home=/[-\w]+/%s/(?:tomcat|server|log)' \
+                                    '|\./bin/%s\ (-c\ conf/%s\.conf)?' \
                                     '|java\ .*%s-.*\.jar.*zoo.cfg.*'\
                                     '|%s: [\w]+ process'\
                                     '|%s: pool www' \
