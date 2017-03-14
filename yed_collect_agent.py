@@ -84,15 +84,17 @@ class AppListen(AppOp):
         self.pid_lists = []
         self.project = project
         print("Find out %s pid number." % self.project)
-        try:
-            # ps aux |grep -E '[D]catalina.home=/data/wire/tomcat'|awk '{print $2}'
-            # 1.内容
-            ps_aux_cmd = 'ps aux'
-            ps_aux_result = subprocess.Popen(shlex.split(ps_aux_cmd), stdout=subprocess.PIPE)
-            ps_aux_result_text = ps_aux_result.communicate()[0]  # .decode('utf-8')
+        # ps aux |grep -E '[D]catalina.home=/data/wire/tomcat'|awk '{print $2}'
+        # 1.内容
+        # 1命令
+        ps_aux_cmd = 'ps aux'
+        # 2执行
+        ps_aux_result = subprocess.Popen(shlex.split(ps_aux_cmd), stdout=subprocess.PIPE)
+        # 3结果
+        ps_aux_result_text = ps_aux_result.communicate()[0]  # .decode('utf-8')
             # 2.pattern&compile
             # ps_aux_pattern_tomcat = 'Dcatalina.home=/[-\w]+/%s/tomcat' % self.project
-            ps_aux_pattern_tomcat = 'Dcatalina.home=/[-\w]+/%s/(tomcat|server|log)' \
+        ps_aux_pattern_tomcat = 'Dcatalina.home=/[-\w]+/%s/(tomcat|server|log)' \
                                     '|\./bin/%s\ -c\ conf/%s\.conf' \
                                     '|./bin/%s'\
                                     '|java\ .*%s-.*\.jar.*zoo.cfg.*'\
@@ -100,18 +102,20 @@ class AppListen(AppOp):
                                     '|%s: pool www' \
                                     '|java -cp /etc/%s/conf' \
                                     % (self.project, self.project, self.project, self.project, self.project, self.project, self.project, self.project)
-            print("Pattern is %s" % ps_aux_pattern_tomcat)
-            ps_aux_compile = re.compile(ps_aux_pattern_tomcat)
-            # 3.match object
-            for ps_aux_result_line in ps_aux_result_text.splitlines():
-                ps_aux_re_find = ps_aux_compile.findall(ps_aux_result_line)
-                if ps_aux_re_find:
-                    print("Get： %s " % ps_aux_re_find)
-                    self.pid = int(ps_aux_result_line.split()[1])
-                    print('%s has a pid number %s ...' % (self.project, self.pid))
-                    self.pid_lists.append(self.pid)
-        except subprocess.CalledProcessError:
-            print('%s is not in this host!' % self.project)
+        print("Pattern is %s" % ps_aux_pattern_tomcat)
+        ps_aux_compile = re.compile(ps_aux_pattern_tomcat)
+        # try:
+        # 3.match object
+        for ps_aux_result_line in ps_aux_result_text.splitlines():
+            ps_aux_re_find = ps_aux_compile.findall(ps_aux_result_line)
+            if ps_aux_re_find:
+                print("Get： %s " % ps_aux_re_find)
+                self.pid = int(ps_aux_result_line.split()[1])
+                print('%s has a pid number %s ...' % (self.project, self.pid))
+                self.pid_lists.append(self.pid)
+            else:
+        # except subprocess.CalledProcessError:
+                print('%s is not in this host!' % self.project)
         print("project %s pid：%s" % (self.project, self.pid_lists))
         return self.pid_lists
     
@@ -228,7 +232,7 @@ class AppListen(AppOp):
 
     def start_line(self,info):
         info = info
-        print("=" * 80 + "\n process project finish : %s \n" % info)
+        print("=" * 80 + "\n process project start : %s \n" % info)
 
     def end_line(self,info):
         info = info

@@ -26,7 +26,7 @@ class DbInitConnect(object):
         self.DBcon = MySQLdb.connect(host=self.host,
                                port = self.port,
                                user = self.username,
-                               passwd=self.password,
+                               passwd = self.password,
                                db = self.db)
         return self.DBcon
         # 返回指针
