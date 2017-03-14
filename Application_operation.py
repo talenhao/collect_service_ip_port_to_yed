@@ -80,7 +80,7 @@ class GroupOperation(DbInitConnect):
     def modifyGroup(self,groupname,new_groupname):
         self.groupname = groupname
         self.newgroupname = new_groupname
-        sql_cmd = 'UPDATE %s SET groupname="%s" where groupname="%s";' %(self.group_table, self.newgroupname, self.groupname)
+        sql_cmd = 'UPDATE %s SET groupname = "%s" where groupname = "%s";' %(self.group_table, self.newgroupname, self.groupname)
         print(sql_cmd)
         self.resultCursor.execute(sql_cmd)
         self.DBcon.commit()
@@ -104,7 +104,7 @@ class applicationOperation(GroupOperation):
     def addApplication(self,projectname,groupname):
         self.groupname=groupname
         self.projectname=projectname
-        if self.groupname is '':
+        if not self.groupname:
             self.groupname='in'
         sql_cmd='SELECT groupid from %s where groupname="%s"' % (self.group_table, self.groupname)
         print(sql_cmd)

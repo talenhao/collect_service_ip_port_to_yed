@@ -33,6 +33,8 @@ yum install -y python-netifaces MySQL-python
     程序匹配更多的项目类型，不仅限于java类的tomcat
 未解决：
     ss效率问题
+    使用配置文件添加项目匹配。
+
 """
 
 
@@ -90,10 +92,14 @@ class AppListen(AppOp):
             ps_aux_result_text = ps_aux_result.communicate()[0]  # .decode('utf-8')
             # 2.pattern&compile
             # ps_aux_pattern_tomcat = 'Dcatalina.home=/[-\w]+/%s/tomcat' % self.project
-            ps_aux_pattern_tomcat = 'Dcatalina.home=/[-\w]+/%s/tomcat' \
+            ps_aux_pattern_tomcat = 'Dcatalina.home=/[-\w]+/%s/(tomcat|server|log)' \
                                     '|\./bin/%s\ -c\ conf/%s\.conf' \
+                                    '|./bin/%s'\
                                     '|java\ .*%s-.*\.jar.*zoo.cfg.*'\
-                                    % (self.project,self.project,self.project,self.project)
+                                    '|%s: [\w]+ process'\
+                                    '|%s: pool www' \
+                                    '|java -cp /etc/%s/conf' \
+                                    % (self.project, self.project, self.project, self.project, self.project, self.project, self.project, self.project)
             print("Pattern is %s" % ps_aux_pattern_tomcat)
             ps_aux_compile = re.compile(ps_aux_pattern_tomcat)
             # 3.match object
