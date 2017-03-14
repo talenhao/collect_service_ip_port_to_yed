@@ -134,7 +134,7 @@ class AppListen(AppOp):
             else:
                 self.card_ip_list.append(card_ip_address)
         # 如果服务监听端口无重复可以打开
-        self.card_ip_list_all = self.card_ip_list.remove('127.0.0.1')
+        # self.card_ip_list_all = self.card_ip_list.remove('127.0.0.1')
         print("Local collect IP: %s" % self.card_ip_list)
         return self.card_ip_list
 
@@ -252,7 +252,7 @@ def app_l_collect():
     connectpooltable = "pooltable"
     connectpool_ipport_column = 'conipport'
     projectcolumn = 'projectname'
-
+    local_ip_list = app_listen_instance.get_localhost_ip_list()
     #
     for project_item in app_listen_con_db_project_list:  # project name
         to_db_ipport_project = []
@@ -280,7 +280,7 @@ def app_l_collect():
                 for port in from_db_ports:
                     # 导入监听表
                     # 监听信息需要提前合成
-                    for ip in app_listen_instance.get_localhost_ip_list():
+                    for ip in local_ip_list:
                         ipport = str(ip)+':'+str(port)
                         linfo = "('"+ipport+"','"+project_item+"')"
                         to_db_ipport_project.append(linfo)
@@ -289,6 +289,7 @@ def app_l_collect():
                 collect_con_ipport_list = app_listen_instance.connectpools(from_db_ports, from_db_pid_list)
                 # 生成连接池信息
                 for con in collect_con_ipport_list:
+                    # ','.join(map(lambda x: "('" + x[0] + "'," + str(int(x[1])) + ')', listen_group_id_project_name))
                     cinfo = "('"+con+"','"+project_item+"')"
                     # print("cinfo is :%s" % cinfo)
                     to_db_conipport_project.append(cinfo)
