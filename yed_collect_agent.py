@@ -95,7 +95,7 @@ class AppListen(AppOp):
             # 2.pattern&compile
             # ps_aux_pattern_tomcat = 'Dcatalina.home=/[-\w]+/%s/tomcat' % self.project
         ps_aux_pattern_tomcat = 'Dcatalina.home=/[-\w]+/%s/(?:tomcat|server|log)' \
-                                    '|\./bin/%s\ (-c\ conf/%s\.conf)?' \
+                                    '|\./bin/%s\ (?:-c\ conf/%s\.conf)?' \
                                     '|java\ .*%s-.*\.jar.*zoo.cfg.*'\
                                     '|%s: [\w]+ process'\
                                     '|%s: pool www' \
