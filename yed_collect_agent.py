@@ -113,10 +113,11 @@ class AppListen(AppOp):
                 self.pid = int(ps_aux_result_line.split()[1])
                 print('%s has a pid number %s ...' % (self.project, self.pid))
                 self.pid_lists.append(self.pid)
-            else:
         # except subprocess.CalledProcessError:
-                print('%s is not in this host!' % self.project)
-        print("project %s pid：%s" % (self.project, self.pid_lists))
+        if self.pid_lists:
+            print("project %s pid：%s" % (self.project, self.pid_lists))
+        else:
+            print('%s is not in this host!' % self.project)
         return self.pid_lists
     
     def get_localhost_ip_list(self):
