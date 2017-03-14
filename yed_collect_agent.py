@@ -100,7 +100,7 @@ class AppListen(AppOp):
                                     '|%s: [\w]+ process'\
                                     '|%s: pool www' \
                                     '|java -cp /etc/%s/conf' \
-                                    % (self.project, self.project, self.project, self.project, self.project, self.project, self.project, self.project)
+                                    % (self.project, self.project, self.project, self.project, self.project, self.project, self.project)
         print("Pattern is %s" % ps_aux_pattern_tomcat)
         ps_aux_compile = re.compile(ps_aux_pattern_tomcat)
         # try:
