@@ -7,7 +7,7 @@
 # Author       : tianfei hao
 # Create Time  : 2017-02-25
 # Last modified:
-# Email        : talenhAppOp@gmail.com
+# Email        : talenhao@gmail.com
 # Description  : collect listen ip port and connect socket.
 # ******************************************************
 
@@ -29,11 +29,15 @@ yum install -y python-netifaces MySQL-python
     ip地址不同版本系统获取问题
 2017-03-10
     去掉127.0.0.1监听地址防止端口相同的业务出现错误
-初步解决：
+2017-03-13
     程序匹配更多的项目类型，不仅限于java类的tomcat
+2017-03-14
+    使用配置文件添加项目匹配。
+2017-03-15
+    添加帮助，版本，配置文件等信息
 未解决：
     ss效率问题
-    使用配置文件添加项目匹配。
+
 
 """
 
@@ -45,12 +49,9 @@ import sys
 # import os
 import re
 import netifaces
+import ConfigParser
 
-
-if sys.version_info < (2, 7):
-    # raise RuntimeError('At least Python 3.4 is required')
-    print('友情提示：当前系统版本低于2.7，建议升级python版本。')
-
+version = "2017-03-15"
 
 class AppListen(AppOp):
     """
@@ -63,6 +64,14 @@ class AppListen(AppOp):
         # self.projecttable = "application"
         # self.group_table = "appgroup"
         self.projects_name_list = []
+
+    def config_file_parser(self, file):
+        self.config_file = file
+        self.config = ConfigParser.ConfigParser()
+        self.config.read(self.config_file)
+        self.pattern_list = "|".join(map(lambda x: x[1], self.config.items('patterns')))
+        return self.pattern_list
+
     def project_list(self):
         """
         :return: project list
@@ -75,7 +84,7 @@ class AppListen(AppOp):
             self.projects_name_list.append(self.row[0])
         return self.projects_name_list
     
-    def collect_pid_list(self, project):
+    def collect_pid_list(self, project, pattern_string):
         """
         查找指定程序的PID
         :param project:
@@ -83,6 +92,7 @@ class AppListen(AppOp):
         """
         self.pid_lists = []
         self.project = project
+        self.pattern_s = pattern_string
         print("Find out %s pid number." % self.project)
         # ps aux |grep -E '[D]catalina.home=/data/wire/tomcat'|awk '{print $2}'
         # 1.内容
@@ -92,17 +102,18 @@ class AppListen(AppOp):
         ps_aux_result = subprocess.Popen(shlex.split(ps_aux_cmd), stdout=subprocess.PIPE)
         # 3结果
         ps_aux_result_text = ps_aux_result.communicate()[0]  # .decode('utf-8')
-            # 2.pattern&compile
-            # ps_aux_pattern_tomcat = 'Dcatalina.home=/[-\w]+/%s/tomcat' % self.project
-        ps_aux_pattern_tomcat = 'Dcatalina.home=/[-\w]+/%s/(?:tomcat|server|log)' \
-                                    '|\./bin/%s\ (?:-c\ conf/%s\.conf)?' \
-                                    '|java\ .*%s-.*\.jar.*zoo.cfg.*'\
-                                    '|%s: [\w]+ process'\
-                                    '|%s: pool www' \
-                                    '|java -cp /etc/%s/conf' \
-                                    % (self.project, self.project, self.project, self.project, self.project, self.project, self.project)
-        print("Pattern is %s" % ps_aux_pattern_tomcat)
-        ps_aux_compile = re.compile(ps_aux_pattern_tomcat)
+        # 2.pattern&compile
+        # ps_aux_pattern_string = 'Dcatalina.home=/[-\w]+/%s/tomcat' % self.project
+        #ps_aux_pattern_string = 'Dcatalina.home=/[-\w]+/%s/(?:tomcat|server|log)' \
+        #                            '|\./bin/%s\ (?:-c\ conf/%s\.conf)?' \
+        #                            '|java -D%s.*\.jar.*/conf/zoo.cfg.*'\
+        #                            '|%s: [\w]+ process'\
+        #                            '|%s: pool www' \
+        #                            '|java -cp /etc/%s/conf' \
+        #                            % (self.project, self.project, self.project, self.project, self.project, self.project, self.project)
+        ps_aux_pattern_string = self.pattern_s.format(projectname = self.project)
+        print("Pattern is %s" % ps_aux_pattern_string)
+        ps_aux_compile = re.compile(ps_aux_pattern_string)
         # try:
         # 3.match object
         for ps_aux_result_line in ps_aux_result_text.splitlines():
@@ -238,13 +249,15 @@ class AppListen(AppOp):
         info = info
         print("\n process project finish : %s \n" % info + "=" * 80)
 
+
 def app_l_collect():
+    app_listen_instance = AppListen()
     # 取出应用名称
     # 初始化实例
     print("开始收集...")
-    app_listen_instance = AppListen()
     # Get project list
     app_listen_con_db_project_list = app_listen_instance.project_list()
+    pattern_string = app_listen_instance.config_file_parser(sys.argv[2])
     # some values
     listentable = "listentable"
     listen_ipport_column = 'lipport'
@@ -261,7 +274,7 @@ def app_l_collect():
         # Split line
         app_listen_instance.start_line(project_item)
         # pid list
-        from_db_pid_list = app_listen_instance.collect_pid_list(project_item)
+        from_db_pid_list = app_listen_instance.collect_pid_list(project_item, pattern_string)
         if not from_db_pid_list:
             print("Have no project %s" % project_item)
             app_listen_instance.end_line(project_item)
@@ -305,4 +318,35 @@ def app_l_collect():
     app_listen_instance.finally_close_connect()
 
 if __name__ == "__main__":
-    app_l_collect()
+    if sys.version_info < (2, 7):
+        # raise RuntimeError('At least Python 3.4 is required')
+        print('友情提示：当前系统版本低于2.7，建议升级python版本。')
+
+    if len(sys.argv) < 2:
+        print('没有匹配规则配置文件')
+        sys.exit()
+
+    if sys.argv[1].startswith('-'):
+        option = sys.argv[1][1:]
+        # print(option)
+        # fetch the first option without '-'.
+        if option == '-version':
+            print('Version %s' % version)
+        elif option == '-help':
+            print('''
+               This program prints collect information to mysql.
+               Please specified a re file to pattern.
+               Options:
+               --version : Prints the version number
+               --help    : Display this help
+               -c file   : Config file.
+            ''')
+        elif option == 'c' and sys.argv[2]:
+            print('Config file is %s' % sys.argv[2])
+            app_l_collect()
+        else:
+            print('Unknown option.')
+            sys.exit()
+    else:
+        print("No Config file.")
+        sys.exit()

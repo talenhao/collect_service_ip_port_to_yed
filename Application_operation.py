@@ -8,6 +8,10 @@
 # Description  : collect listen ip port and connect socket.
 # ******************************************************
 # 数据库操作
+"""
+2017-03-15
+    修复添加重复application报错_mysql_exceptions.IntegrityError:
+"""
 
 import MySQLdb
 
@@ -114,8 +118,15 @@ class applicationOperation(GroupOperation):
         sql_cmd='INSERT INTO %s (projectname, group_id) VALUES ("%s", %s)' % (self.projecttable, self.projectname, self.groupid)
         # sql_cmd='INSERT INTO %s (projectname) VALUE ("%s") ' % (self.projecttable, self.projectname)
         print(sql_cmd)
-        self.resultCursor.execute(sql_cmd)
-        self.DBcon.commit()
+        try:
+            self.resultCursor.execute(sql_cmd)
+        # except _mysql_exceptions.IntegrityError as e:
+        except:
+                # Another instance already created in this column
+                print("Duplicate!")
+                # print(e)
+        else:
+            self.DBcon.commit()
 
     def delApplication(self, projectname):
         self.projectname = projectname
