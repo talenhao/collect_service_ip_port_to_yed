@@ -27,7 +27,7 @@ CREATE TABLE `appgroup` (
   `groupname` varchar(20) NOT NULL,
   `parent_group` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`groupid`)
-) ENGINE=InnoDB AUTO_INCREMENT=59 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=61 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -39,10 +39,11 @@ DROP TABLE IF EXISTS `application`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `application` (
   `project_id` tinyint(4) NOT NULL AUTO_INCREMENT,
-  `projectname` varchar(20) DEFAULT NULL,
+  `projectname` varchar(50) NOT NULL,
   `group_id` tinyint(4) DEFAULT NULL,
-  PRIMARY KEY (`project_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8;
+  PRIMARY KEY (`project_id`),
+  UNIQUE KEY `projectname` (`projectname`)
+) ENGINE=InnoDB AUTO_INCREMENT=127 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -72,7 +73,7 @@ CREATE TABLE `nodes` (
   `node` varchar(20) NOT NULL,
   PRIMARY KEY (`node_id`),
   UNIQUE KEY `node` (`node`)
-) ENGINE=InnoDB AUTO_INCREMENT=217 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=643 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -88,19 +89,6 @@ CREATE TABLE `pooltable` (
   PRIMARY KEY (`conipport`,`projectname`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `temp_pooltable`
---
-
-DROP TABLE IF EXISTS `temp_pooltable`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `temp_pooltable` (
-  `conipport` varchar(24) NOT NULL,
-  `projectname` varchar(20) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -111,4 +99,4 @@ CREATE TABLE `temp_pooltable` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-03-10 13:07:19
+-- Dump completed on 2017-03-15 18:15:36
