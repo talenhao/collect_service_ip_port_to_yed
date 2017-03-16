@@ -35,6 +35,8 @@ yum install -y python-netifaces MySQL-python
     使用配置文件添加项目匹配。
 2017-03-15
     添加帮助，版本，配置文件等信息
+2017-03-16
+    修复porjectname过长被truncate的问题
 未解决：
     ss效率问题
 
@@ -58,7 +60,6 @@ class AppListen(AppOp):
     收集监听IP及port信息
     收集连接池信息
     """
-    
     def __init__(self):
         AppOp.__init__(self)
         # self.projecttable = "application"
@@ -93,7 +94,7 @@ class AppListen(AppOp):
         self.pid_lists = []
         self.project = project
         self.pattern_s = pattern_string
-        print("Find out %s pid number." % self.project)
+        # print("Find out %s pid number." % self.project)
         # ps aux |grep -E '[D]catalina.home=/data/wire/tomcat'|awk '{print $2}'
         # 1.内容
         # 1命令
@@ -276,7 +277,7 @@ def app_l_collect():
         # pid list
         from_db_pid_list = app_listen_instance.collect_pid_list(project_item, pattern_string)
         if not from_db_pid_list:
-            print("Have no project %s" % project_item)
+            # print("Have no project %s" % project_item)
             app_listen_instance.end_line(project_item)
             continue
         else:
@@ -287,7 +288,7 @@ def app_l_collect():
                 app_listen_instance.end_line(project_item)
                 continue
             else:
-                print("2.查询到的pid列表：%s" % from_db_pid_list)
+                # print("2.查询到的pid列表：%s" % from_db_pid_list)
                 # 生成监听信息
                 for port in from_db_ports:
                     # 导入监听表
@@ -296,7 +297,7 @@ def app_l_collect():
                         ipport = str(ip)+':'+str(port)
                         linfo = "('"+ipport+"','"+project_item+"')"
                         to_db_ipport_project.append(linfo)
-                print("%s listen infomation ok" % project_item)
+                # print("%s listen infomation ok" % project_item)
                 # 生成连接池表
                 collect_con_ipport_list = app_listen_instance.connectpools(from_db_ports, from_db_pid_list)
                 # 生成连接池信息
@@ -305,7 +306,7 @@ def app_l_collect():
                     cinfo = "('"+con+"','"+project_item+"')"
                     # print("cinfo is :%s" % cinfo)
                     to_db_conipport_project.append(cinfo)
-                print("%s connect pool infomation ok" % project_item)
+                # print("%s connect pool infomation ok" % project_item)
         # print("导入ip列表%s" % to_db_ipport_project)
         app_listen_instance.import2db(listentable, listen_ipport_column, projectcolumn, to_db_ipport_project)
         # print("导入connect列表%s" % to_db_conipport_project)
