@@ -12,10 +12,8 @@
 # ******************************************************
 
 """
-执行前需要清空的表：pooltable,nodes
+执行前需要清空的表：nodes
 收集信息=》存储
-yum install -y python-netifaces MySQL-python
-
 2017-02-27
     2.6.6版本不支持subprocess.check_out,修改为subprocess.Popen(["ls", "-a"], stdout=subprocess.PIPE).communicate()[0]
 2017-02-28
@@ -104,22 +102,23 @@ class AppListen(AppOp):
         # 3结果
         ps_aux_result_text = ps_aux_result.communicate()[0]  # .decode('utf-8')
         # 2.pattern&compile
-        # ps_aux_pattern_string = 'Dcatalina.home=/[-\w]+/%s/tomcat' % self.project
-        #ps_aux_pattern_string = 'Dcatalina.home=/[-\w]+/%s/(?:tomcat|server|log)' \
+        # version1: ps_aux_pattern_string = 'Dcatalina.home=/[-\w]+/%s/tomcat' % self.project
+        # version2: ps_aux_pattern_string = 'Dcatalina.home=/[-\w]+/%s/(?:tomcat|server|log)' \
         #                            '|\./bin/%s\ (?:-c\ conf/%s\.conf)?' \
         #                            '|java -D%s.*\.jar.*/conf/zoo.cfg.*'\
         #                            '|%s: [\w]+ process'\
         #                            '|%s: pool www' \
         #                            '|java -cp /etc/%s/conf' \
         #                            % (self.project, self.project, self.project, self.project, self.project, self.project, self.project)
+        # version3:
         ps_aux_pattern_string = self.pattern_s.format(projectname = self.project)
-        print("Pattern is %s" % ps_aux_pattern_string)
         ps_aux_compile = re.compile(ps_aux_pattern_string)
         # try:
         # 3.match object
         for ps_aux_result_line in ps_aux_result_text.splitlines():
             ps_aux_re_find = ps_aux_compile.findall(ps_aux_result_line)
             if ps_aux_re_find:
+                print("Pattern is %s" % ps_aux_pattern_string)
                 print("Get： %s " % ps_aux_re_find)
                 self.pid = int(ps_aux_result_line.split()[1])
                 print('%s has a pid number %s ...' % (self.project, self.pid))
@@ -182,7 +181,6 @@ class AppListen(AppOp):
 
     def connectpools(self, ports, pids):
         """
-
         :param ports:
         :param pids:
         :return: 连接池
@@ -236,7 +234,7 @@ class AppListen(AppOp):
                 self.projectcolumn,
                 ','.join(self.message)
             )
-            print(sql_cmd)
+            # print(sql_cmd)
             self.resultCursor.execute(sql_cmd)
             self.DBcon.commit()
         else:
@@ -244,11 +242,11 @@ class AppListen(AppOp):
 
     def start_line(self,info):
         info = info
-        print("=" * 80 + "\n process project start : %s \n" % info)
+        print(">" * 80 + "\n process project start : %s \n" % info)
 
     def end_line(self,info):
         info = info
-        print("\n process project finish : %s \n" % info + "=" * 80)
+        print("\n process project finish : %s \n" % info + "<" * 80)
 
 
 def app_l_collect():
