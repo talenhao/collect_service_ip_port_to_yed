@@ -38,12 +38,12 @@ DROP TABLE IF EXISTS `application`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `application` (
-  `project_id` tinyint(4) NOT NULL AUTO_INCREMENT,
+  `project_id` bigint(21) NOT NULL AUTO_INCREMENT,
   `projectname` varchar(50) NOT NULL,
   `group_id` tinyint(4) DEFAULT NULL,
   PRIMARY KEY (`project_id`),
   UNIQUE KEY `projectname` (`projectname`)
-) ENGINE=InnoDB AUTO_INCREMENT=127 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=131 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -55,7 +55,7 @@ DROP TABLE IF EXISTS `listentable`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `listentable` (
   `lipport` varchar(24) NOT NULL,
-  `projectname` varchar(20) NOT NULL,
+  `projectname` varchar(40) NOT NULL,
   PRIMARY KEY (`lipport`,`projectname`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -70,10 +70,10 @@ DROP TABLE IF EXISTS `nodes`;
 CREATE TABLE `nodes` (
   `group_id` tinyint(4) DEFAULT NULL,
   `node_id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `node` varchar(20) NOT NULL,
+  `node` varchar(40) NOT NULL,
   PRIMARY KEY (`node_id`),
   UNIQUE KEY `node` (`node`)
-) ENGINE=InnoDB AUTO_INCREMENT=643 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=327 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -85,7 +85,7 @@ DROP TABLE IF EXISTS `pooltable`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `pooltable` (
   `conipport` varchar(24) NOT NULL,
-  `projectname` varchar(20) NOT NULL,
+  `projectname` varchar(40) NOT NULL,
   PRIMARY KEY (`conipport`,`projectname`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -99,4 +99,4 @@ CREATE TABLE `pooltable` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-03-15 18:15:36
+-- Dump completed on 2017-03-16 14:35:24

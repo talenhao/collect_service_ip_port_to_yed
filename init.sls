@@ -1,3 +1,8 @@
+init_dir:
+  file:
+    - absent
+    - name: /tmp/collect_service_ip_port_to_yed/
+
 python_require_common_package: # id
   pkg.installed: # state.funcation
     - pkgs:
@@ -10,6 +15,7 @@ python_require_common_package: # id
 #    - pkgs:
 #      - MySQL-python
 #      - netifaces
+
 run_dir:
   file.directory:
     - name: /tmp/collect_service_ip_port_to_yed/
@@ -22,6 +28,8 @@ run_dir:
       - group
       - mode
       - ignore_dirs
+    - require:
+      - file: init_dir
 
 collect2yed_git:
   git.latest:
@@ -30,6 +38,7 @@ collect2yed_git:
     - force_reset: True
     - require:
       - pkg: python_require_common_package
+      - file: run_dir
 
 yed_collect_agent:
   cmd.run:
@@ -38,4 +47,11 @@ yed_collect_agent:
     - timeout: 82800
     - require:
       - git: collect2yed_git
-      - pkg: python_require_common_package
+
+rm_files:
+  file:
+    - absent
+    - name: /tmp/collect_service_ip_port_to_yed/
+    - require:
+      - cmd: yed_collect_agent
+
