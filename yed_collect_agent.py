@@ -37,6 +37,7 @@
     修复porjectname过长被truncate的问题
 未解决：
     ss效率问题
+    收集完监听pid未处理连接池之间，进程重启有一定机率匹配到其它启动起来占用原来pid，造成匹配信息错误。
 
 
 """
@@ -51,7 +52,7 @@ import re
 import netifaces
 import ConfigParser
 
-version = "2017-03-16"
+version = "2017-03-17"
 
 class AppListen(AppOp):
     """
@@ -65,6 +66,11 @@ class AppListen(AppOp):
         self.projects_name_list = []
 
     def config_file_parser(self, file):
+        """
+        处理进程匹配文件
+        :param file: 
+        :return: 
+        """
         self.config_file = file
         self.config = ConfigParser.ConfigParser()
         self.config.read(self.config_file)
@@ -73,6 +79,7 @@ class AppListen(AppOp):
 
     def project_list(self):
         """
+        加载服务列表
         :return: project list
         """
         sql_cmd = "SELECT projectname from %s" % self.projecttable  # self.projecttable来自AppOp
