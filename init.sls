@@ -11,10 +11,16 @@ python_require_common_package: # id
       - python-netifaces
       - git
       - MySQL-python
-#  pip.installed:
-#    - pkgs:
-#      - MySQL-python
-#      - netifaces
+
+python_pip_require:
+  pip.installed:
+    - name:
+      - MySQL-python
+      - psutil >= 5.2.0
+      - netifaces
+    - upgrade: True
+    - require:
+      - pkg: python_require_common_package
 
 run_dir:
   file.directory:
@@ -47,6 +53,7 @@ yed_collect_agent:
     - timeout: 82800
     - require:
       - git: collect2yed_git
+      - pip: python_pip_require
 
 rm_files:
   file:
