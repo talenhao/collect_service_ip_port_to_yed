@@ -1,3 +1,4 @@
+#初始化运行目录
 init_dir:
   file:
     - absent
