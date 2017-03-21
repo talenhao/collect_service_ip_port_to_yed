@@ -325,13 +325,11 @@ class AppListen(AppOp):
             print("%s is not have socket." % self.project)
 
     @staticmethod
-    def start_line(self, info):
-        info = info
+    def start_line(info):
         print(">" * 80 + "\n process project start : %s \n" % info)
 
     @staticmethod
-    def end_line(self, info):
-        info = info
+    def end_line(info):
         print("\n process project finish : %s \n" % info + "<" * 80)
 
 

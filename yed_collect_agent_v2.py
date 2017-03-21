@@ -1,12 +1,10 @@
 #!/bin/env python
-# coding=utf-8
-
 # -*- coding:utf-8 -*-
 
 # ******************************************************
 # Author       : tianfei hao
 # Create Time  : 2017-03-20
-# Last modified: 2017-03-20
+# Last modified: 2017-03-21
 # Email        : talenhao@gmail.com
 # Description  : collect listen ip port and connect socket.
 # Version      : 2.0
@@ -35,8 +33,9 @@
 2017-03-16
     修复porjectname过长被truncate的问题
 2017-03-21
-    添加pid创建日期判断
     添加记录原始数据日志功能
+    收集完监听pid未处理连接池之间，进程重启有一定机率匹配到其它启动起来占用原来pid，造成匹配信息错误。
+    添加pid创建日期判断
 未解决：
     使用psutil模块代替ps,ss收集信息。
 """
@@ -53,10 +52,47 @@ import psutil
 import datetime
 import time
 
+version = "2017-03-21"
 
-version = "2017-03-20"
-RunDateTime = time.time()
 
+def help_check(func):
+    def wrapper(*args, **kwargs):
+        run_data_time = time.time()
+        print("Current datetime is : %s" % datetime.datetime.fromtimestamp(run_data_time))
+        if sys.version_info < (2, 7):
+            # raise RuntimeError('At least Python 3.4 is required')
+            print('友情提示：当前系统版本低于2.7，建议升级python版本。')
+        if len(sys.argv) < 2:
+            print('没有匹配规则配置文件')
+            sys.exit()
+        if sys.argv[1].startswith('-'):
+            option = sys.argv[1][1:]
+            # print(option)
+            # fetch the first option without '-'.
+            if option == '-version':
+                print('Version %s' % version)
+            elif option == '-help':
+                print('''
+                   This program prints collect information to mysql.
+                   Please specified a re file to pattern.
+                   Options:
+                   --version : Prints the version number
+                   --help    : Display this help
+                   -c file   : Config file.
+                ''')
+            elif option == 'c' and sys.argv[2]:
+                print('Config file is %s' % sys.argv[2])
+                return func(*args, **kwargs)
+            else:
+                print('Unknown option.')
+                sys.exit()
+        else:
+            print("No Config file.")
+            sys.exit()
+    return wrapper()
+
+
+@help_check
 class AppListen(AppOp):
     """
     收集监听IP及port信息
@@ -68,17 +104,18 @@ class AppListen(AppOp):
         # self.group_table = "appgroup"
         self.projects_name_list = []
 
-    def config_file_parser(self, config_file):
+    @staticmethod
+    def config_file_parser(config_file):
         """
         处理进程匹配文件
         :param config_file: 
         :return: 
         """
-        self.config_file = config_file
-        self.config = ConfigParser.ConfigParser()
-        self.config.read(self.config_file)
-        self.pattern_list = "|".join(map(lambda x: x[1], self.config.items('patterns')))
-        return self.pattern_list
+        config_file = config_file
+        config = ConfigParser.ConfigParser()
+        config.read(config_file)
+        pattern_list = "|".join(map(lambda x: x[1], config.items('patterns')))
+        return pattern_list
 
     def project_list(self):
         """
@@ -92,7 +129,20 @@ class AppListen(AppOp):
             print("project name: %s" % self.row)
             self.projects_name_list.append(self.row[0])
         return self.projects_name_list
-    
+
+    def pid_create_time(self, project, pid):
+        pid = pid
+        project = project
+        run_date_time = time.time()
+        finded_pid = int(pid[0])
+        pid_create_time = psutil.Process(pid=finded_pid).create_time()
+        if pid_create_time > run_date_time:
+            print("%s 的进程%s已经被其它程序使用，数据失效，丢弃..." % (project, finded_pid))
+            return None
+        else:
+            print("%s 的进程%s数据有效，正在查找监听..." % (project, finded_pid))
+            return finded_pid
+
     def collect_pid_list(self, project, pattern_string):
         """
         查找指定程序的PID
@@ -195,10 +245,17 @@ class AppListen(AppOp):
         for ss_cmd_result_line in ss_cmd_result_text.splitlines():
             ss_cmd_re_findpid = ss_cmd_compile.findall(ss_cmd_result_line)
             if ss_cmd_re_findpid:
-                # print(ss_cmd_result_line)
-                listenport = ss_cmd_result_line.split()[3].split(':')[-1].strip()
-                # print(listenport)
-                self.portlists.append(listenport)
+                finded_pid = int(sscmd_re_findpid[0])
+                print("sscmd_re_findpid is %s " % finded_pid)
+                pid_create_time = psutil.Process(pid=finded_pid).create_time()
+                if pid_create_time > run_date_time:
+                    print("%s 的进程%s已经被其它程序使用，数据失效，丢弃..." % (project, finded_pid))
+                    continue
+                else:
+                    print("%s 的进程%s数据有效，正在查找监听..." % (project, finded_pid))
+                    self.listenport = sscmd_result_line.split()[3].split(':')[-1].strip()
+                    # print(self.listenport)
+                    self.portlists.append(self.listenport)
         print("监听端口接收到的监听列表%s" % self.portlists)
         return self.portlists
 
@@ -268,10 +325,12 @@ class AppListen(AppOp):
         else:
             print("%s is not have socket." % self.project)
 
+    @staticmethod
     def start_line(self, info):
         info = info
         print(">" * 80 + "\n process project start : %s \n" % info)
 
+    @staticmethod
     def end_line(self, info):
         info = info
         print("\n process project finish : %s \n" % info + "<" * 80)
@@ -344,7 +403,12 @@ def app_l_collect():
         app_listen_instance.end_line(project_item)
     app_listen_instance.finally_close_connect()
 
+
 if __name__ == "__main__":
+    app_l_collect()
+
+    """
+    RunDateTime = time.time()
     print("Current datetime is : %s" % datetime.datetime.fromtimestamp(RunDateTime))
     if sys.version_info < (2, 7):
         # raise RuntimeError('At least Python 3.4 is required')
@@ -378,3 +442,4 @@ if __name__ == "__main__":
     else:
         print("No Config file.")
         sys.exit()
+"""
