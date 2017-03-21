@@ -279,12 +279,13 @@ class AppListen(AppOp):
         ss_ntp_cmd_result = subprocess.Popen(shlex.split(ss_ntp_cmd), stdout=subprocess.PIPE)
         ss_ntp_cmd_result_text = ss_ntp_cmd_result.communicate()[0]  # .decode('utf-8')
         # print("ss_ntp_cmd_result_text is %s" % ss_ntp_cmd_result_text)
-        filename = '/tmp/collect_service_ip_port_to_yed-ps-aux-%s-%s' % (project, datetime.datetime.now())
+        filename = '/tmp/collect_service_ip_port_to_yed-ss-ntp-%s-%s' % (project, datetime.datetime.now())
         file_log = open(filename, 'w')
         file_log.write(ss_ntp_cmd_result_text)
         file_log.close()
         # 2.pattern&compile
-        ss_ntp_cmd_pattern_pid = '|'.join(',{0},'.format(n) for n in pids)
+        ss_ntp_cmd_pattern_pid = '|'.join(",{0},".format(n) for n in pids)
+        print(type(ss_ntp_cmd_pattern_pid))
         print("ss_ntp_cmd_pattern_pid: %s " % ss_ntp_cmd_pattern_pid )
         ss_ntp_cmd_compile = re.compile(ss_ntp_cmd_pattern_pid)
         # 3.match object
