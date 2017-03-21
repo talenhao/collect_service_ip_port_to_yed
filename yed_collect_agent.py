@@ -284,7 +284,7 @@ class AppListen(AppOp):
         file_log.write(ss_ntp_cmd_result_text)
         file_log.close()
         # 2.pattern&compile
-        ss_ntp_cmd_pattern_pid = '|'.join(',{},'.format(n) for n in pids)
+        ss_ntp_cmd_pattern_pid = '|'.join(',{0},'.format(n) for n in pids)
         print("ss_ntp_cmd_pattern_pid: %s " % ss_ntp_cmd_pattern_pid )
         ss_ntp_cmd_compile = re.compile(ss_ntp_cmd_pattern_pid)
         # 3.match object
@@ -405,40 +405,3 @@ def app_l_collect():
 
 if __name__ == "__main__":
     app_l_collect()
-
-    """
-    RunDateTime = time.time()
-    print("Current datetime is : %s" % datetime.datetime.fromtimestamp(RunDateTime))
-    if sys.version_info < (2, 7):
-        # raise RuntimeError('At least Python 3.4 is required')
-        print('友情提示：当前系统版本低于2.7，建议升级python版本。')
-
-    if len(sys.argv) < 2:
-        print('没有匹配规则配置文件')
-        sys.exit()
-
-    if sys.argv[1].startswith('-'):
-        option = sys.argv[1][1:]
-        # print(option)
-        # fetch the first option without '-'.
-        if option == '-version':
-            print('Version %s' % version)
-        elif option == '-help':
-            print('''
-               This program prints collect information to mysql.
-               Please specified a re file to pattern.
-               Options:
-               --version : Prints the version number
-               --help    : Display this help
-               -c file   : Config file.
-            ''')
-        elif option == 'c' and sys.argv[2]:
-            print('Config file is %s' % sys.argv[2])
-            app_l_collect()
-        else:
-            print('Unknown option.')
-            sys.exit()
-    else:
-        print("No Config file.")
-        sys.exit()
-"""
