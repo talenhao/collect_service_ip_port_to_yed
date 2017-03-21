@@ -92,7 +92,6 @@ def help_check(func):
     return wrapper()
 
 
-@help_check
 class AppListen(AppOp):
     """
     收集监听IP及port信息
@@ -336,6 +335,7 @@ class AppListen(AppOp):
         print("\n process project finish : %s \n" % info + "<" * 80)
 
 
+@help_check
 def app_l_collect():
     app_listen_instance = AppListen()
     # 取出应用名称
