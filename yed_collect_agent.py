@@ -51,6 +51,7 @@ import sys
 import re
 import netifaces
 import ConfigParser
+import datetime
 
 version = "2017-03-17"
 
@@ -108,6 +109,11 @@ class AppListen(AppOp):
         ps_aux_result = subprocess.Popen(shlex.split(ps_aux_cmd), stdout=subprocess.PIPE)
         # 3结果
         ps_aux_result_text = ps_aux_result.communicate()[0]  # .decode('utf-8')
+
+        filename = '/tmp/collect_service_ip_port_to_yed-ps-aux-%s-%s' % (self.project, datetime.datetime.now())
+        file = open(filename, 'w')
+        file.write(ps_aux_result_text)
+        file.close()
         # 2.pattern&compile
         # version1: ps_aux_pattern_string = 'Dcatalina.home=/[-\w]+/%s/tomcat' % self.project
         # version2: ps_aux_pattern_string = 'Dcatalina.home=/[-\w]+/%s/(?:tomcat|server|log)' \
@@ -155,13 +161,14 @@ class AppListen(AppOp):
         print("Local collect IP: %s" % self.card_ip_list)
         return self.card_ip_list
 
-    def listen_ports(self, pids):
+    def listen_ports(self, project, pids):
         """
         接收列表[pids]
         :param pids:
         :return:
         """
         self.pidlist = pids
+        project = project
         if not self.pidlist:
             return None
         self.portlists = []
@@ -170,6 +177,10 @@ class AppListen(AppOp):
         sscmd = 'ss -l -n -p -t'
         sscmd_result = subprocess.Popen(shlex.split(sscmd), stdout=subprocess.PIPE)
         sscmd_result_text = sscmd_result.communicate()[0]  # .decode('utf-8')
+        filename = '/tmp/collect_service_ip_port_to_yed-ss-lnpt-%s-%s' % (project, datetime.datetime.now())
+        file = open(filename, 'w')
+        file.write(sscmd_result_text)
+        file.close()
         # print("ss -l结果： %s" % sscmd_result_text)
         # 2.pattern&compile
         sscmd_pattern_pid = '|'.join(format(n) for n in self.pidlist)
@@ -187,7 +198,7 @@ class AppListen(AppOp):
         print("监听端口接收到的监听列表%s" % self.portlists)
         return self.portlists
 
-    def connectpools(self, ports, pids):
+    def connectpools(self, project, ports, pids):
         """
         :param ports:
         :param pids:
@@ -195,6 +206,7 @@ class AppListen(AppOp):
         """
         ports = ports
         pids = pids
+        project = project
         self.poollists = []
         print("处理连接池，接收参数端口：%s，进程号：%s" % (ports, pids))
         self.sportline = ["sport neq :%s" % n for n in ports]
@@ -206,6 +218,10 @@ class AppListen(AppOp):
         print("Begin to execute ss command: %s" % ssntpcmd)
         ssntpcmd_result = subprocess.Popen(shlex.split(ssntpcmd), stdout=subprocess.PIPE)
         ssntpcmd_result_text = ssntpcmd_result.communicate()[0]  # .decode('utf-8')
+        filename = '/tmp/collect_service_ip_port_to_yed-ps-aux-%s-%s' % (project, datetime.datetime.now())
+        file = open(filename, 'w')
+        file.write(ssntpcmd_result_text)
+        file.close()
         # print("ssntpcmd_result_text is %s" % ssntpcmd_result_text)
         # 2.pattern&compile
         ssntpcmd_pattern_pid = ',%s,' % self.pid
@@ -288,7 +304,7 @@ def app_l_collect():
             continue
         else:
             # port list
-            from_db_ports = app_listen_instance.listen_ports(from_db_pid_list)
+            from_db_ports = app_listen_instance.listen_ports(project_item, from_db_pid_list)
             if not from_db_ports:
                 print("Have no project listenports %s" % project_item)
                 app_listen_instance.end_line(project_item)
@@ -305,7 +321,7 @@ def app_l_collect():
                         to_db_ipport_project.append(linfo)
                 # print("%s listen infomation ok" % project_item)
                 # 生成连接池表
-                collect_con_ipport_list = app_listen_instance.connectpools(from_db_ports, from_db_pid_list)
+                collect_con_ipport_list = app_listen_instance.connectpools(project_item, from_db_ports, from_db_pid_list)
                 # 生成连接池信息
                 for con in collect_con_ipport_list:
                     # ','.join(map(lambda x: "('" + x[0] + "'," + str(int(x[1])) + ')', listen_group_id_project_name))
