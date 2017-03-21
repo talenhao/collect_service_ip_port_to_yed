@@ -234,7 +234,7 @@ class AppListen(AppOp):
         # print("ss -l结果： %s" % ss_cmd_result_text)
         filename = '/tmp/collect_service_ip_port_to_yed-ss-lnpt-%s-%s' % (project, datetime.datetime.now())
         file = open(filename, 'w')
-        file.write(sscmd_result_text)
+        file.write(ss_cmd_result_text)
         file.close()
         # 2.pattern&compile
         ss_cmd_pattern_pid = '|'.join(format(n) for n in self.pidlist)
@@ -244,17 +244,16 @@ class AppListen(AppOp):
         for ss_cmd_result_line in ss_cmd_result_text.splitlines():
             ss_cmd_re_findpid = ss_cmd_compile.findall(ss_cmd_result_line)
             if ss_cmd_re_findpid:
-                finded_pid = int(sscmd_re_findpid[0])
-                print("sscmd_re_findpid is %s " % finded_pid)
+                finded_pid = int(ss_cmd_re_findpid[0])
+                print("ss_cmd_re_findpid is %s " % finded_pid)
                 pid_create_time = psutil.Process(pid=finded_pid).create_time()
                 if pid_create_time > run_date_time:
                     print("%s 的进程%s已经被其它程序使用，数据失效，丢弃..." % (project, finded_pid))
                     continue
                 else:
                     print("%s 的进程%s数据有效，正在查找监听..." % (project, finded_pid))
-                    self.listenport = sscmd_result_line.split()[3].split(':')[-1].strip()
-                    # print(self.listenport)
-                    self.portlists.append(self.listenport)
+                    listen_port = ss_cmd_result_line.split()[3].split(':')[-1].strip()
+                    self.portlists.append(listen_port)
         print("监听端口接收到的监听列表%s" % self.portlists)
         return self.portlists
 
