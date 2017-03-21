@@ -178,7 +178,7 @@ class AppListen(AppOp):
         # 3.match object
         for sscmd_result_line in sscmd_result_text.splitlines():
             sscmd_re_findpid = sscmd_compile.findall(sscmd_result_line)
-            print("sscmd_re_findpid is " %s sscmd_re_findpid)
+            print("sscmd_re_findpid is %s " % sscmd_re_findpid)
             if sscmd_re_findpid:
                 # print(sscmd_result_line)
                 self.listenport = sscmd_result_line.split()[3].split(':')[-1].strip()
