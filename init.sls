@@ -9,16 +9,17 @@ python_require_common_package: # id
     - pkgs:
       - python-pip
       - python-devel
-      - python-netifaces
+#      - python-netifaces
       - git
       - MySQL-python
 
 python_pip_require:
   pip.installed:
-    - name:
-      - MySQL-python
+    - names:
+#      - MySQL-python
       - psutil >= 5.2.0
       - netifaces
+#      - pip
     - upgrade: True
     - require:
       - pkg: python_require_common_package
