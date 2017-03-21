@@ -89,7 +89,7 @@ def help_check(func):
         else:
             print("No Config file.")
             sys.exit()
-    return wrapper()
+    return wrapper
 
 
 class AppListen(AppOp):
