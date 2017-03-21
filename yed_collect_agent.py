@@ -35,11 +35,11 @@
     添加帮助，版本，配置文件等信息
 2017-03-16
     修复porjectname过长被truncate的问题
+2017-03-21
+    添加记录原始数据日志
 未解决：
     ss效率问题
     收集完监听pid未处理连接池之间，进程重启有一定机率匹配到其它启动起来占用原来pid，造成匹配信息错误。
-
-
 """
 
 
@@ -52,8 +52,10 @@ import re
 import netifaces
 import ConfigParser
 import datetime
+import time
 
 version = "2017-03-17"
+RunDateTime = time.time()
 
 class AppListen(AppOp):
     """
@@ -109,11 +111,6 @@ class AppListen(AppOp):
         ps_aux_result = subprocess.Popen(shlex.split(ps_aux_cmd), stdout=subprocess.PIPE)
         # 3结果
         ps_aux_result_text = ps_aux_result.communicate()[0]  # .decode('utf-8')
-
-        filename = '/tmp/collect_service_ip_port_to_yed-ps-aux-%s-%s' % (self.project, datetime.datetime.now())
-        file = open(filename, 'w')
-        file.write(ps_aux_result_text)
-        file.close()
         # 2.pattern&compile
         # version1: ps_aux_pattern_string = 'Dcatalina.home=/[-\w]+/%s/tomcat' % self.project
         # version2: ps_aux_pattern_string = 'Dcatalina.home=/[-\w]+/%s/(?:tomcat|server|log)' \
@@ -131,6 +128,10 @@ class AppListen(AppOp):
         for ps_aux_result_line in ps_aux_result_text.splitlines():
             ps_aux_re_find = ps_aux_compile.findall(ps_aux_result_line)
             if ps_aux_re_find:
+                filename = '/tmp/collect_service_ip_port_to_yed-ps-aux-%s-%s' % (self.project, datetime.datetime.now())
+                file = open(filename, 'w')
+                file.write(ps_aux_result_text)
+                file.close()
                 print("Pattern is %s" % ps_aux_pattern_string)
                 print("Get： %s " % ps_aux_re_find)
                 self.pid = int(ps_aux_result_line.split()[1])
@@ -169,6 +170,9 @@ class AppListen(AppOp):
         """
         self.pidlist = pids
         project = project
+        # pid collect time: if the collection time is less than the creation time, the process has been killed and
+        # the PID number is attached to the new process, then will drop this PID number.
+        run_date_time = time.time()
         if not self.pidlist:
             return None
         self.portlists = []
@@ -341,6 +345,7 @@ def app_l_collect():
     app_listen_instance.finally_close_connect()
 
 if __name__ == "__main__":
+    print("Current datetime is : %s" % datetime.datetime.fromtimestamp(RunDateTime))
     if sys.version_info < (2, 7):
         # raise RuntimeError('At least Python 3.4 is required')
         print('友情提示：当前系统版本低于2.7，建议升级python版本。')
