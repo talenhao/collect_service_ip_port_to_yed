@@ -133,14 +133,14 @@ class AppListen(AppOp):
         pid = pid
         project = project
         run_date_time = time.time()
-        finded_pid = int(pid[0])
-        pid_create_time = psutil.Process(pid=finded_pid).create_time()
+        found_pid = int(pid[0])
+        pid_create_time = psutil.Process(pid=found_pid).create_time()
         if pid_create_time > run_date_time:
-            print("%s 的进程%s已经被其它程序使用，数据失效，丢弃..." % (project, finded_pid))
+            print("%s 的进程%s已经被其它程序使用，数据失效，丢弃..." % (project, found_pid))
             return None
         else:
-            print("%s 的进程%s数据有效，正在查找监听..." % (project, finded_pid))
-            return finded_pid
+            print("%s 的进程%s数据有效，正在查找监听..." % (project, found_pid))
+            return found_pid
 
     def collect_pid_list(self, project, pattern_string):
         """
@@ -244,14 +244,14 @@ class AppListen(AppOp):
         for ss_cmd_result_line in ss_cmd_result_text.splitlines():
             ss_cmd_re_findpid = ss_cmd_compile.findall(ss_cmd_result_line)
             if ss_cmd_re_findpid:
-                finded_pid = int(ss_cmd_re_findpid[0])
-                print("ss_cmd_re_findpid is %s " % finded_pid)
-                pid_create_time = psutil.Process(pid=finded_pid).create_time()
+                found_pid = int(ss_cmd_re_findpid[0])
+                print("ss_cmd_re_findpid is %s " % found_pid)
+                pid_create_time = psutil.Process(pid=found_pid).create_time()
                 if pid_create_time > run_date_time:
-                    print("%s 的进程%s已经被其它程序使用，数据失效，丢弃..." % (project, finded_pid))
+                    print("%s 的进程%s已经被其它程序使用，数据失效，丢弃..." % (project, found_pid))
                     continue
                 else:
-                    print("%s 的进程%s数据有效，正在查找监听..." % (project, finded_pid))
+                    print("%s 的进程%s数据有效，正在查找监听..." % (project, found_pid))
                     listen_port = ss_cmd_result_line.split()[3].split(':')[-1].strip()
                     self.portlists.append(listen_port)
         print("监听端口接收到的监听列表%s" % self.portlists)
@@ -261,6 +261,7 @@ class AppListen(AppOp):
         """
         :param ports:
         :param pids:
+        :param project:
         :return: 连接池
         """
         ports = ports
@@ -268,30 +269,30 @@ class AppListen(AppOp):
         project = project
         self.poollists = []
         print("处理连接池，接收参数端口：%s，进程号：%s" % (ports, pids))
-        self.sportline = ["sport neq :%s" % n for n in ports]
-        self.sportjoin = ' and '.join(self.sportline)
+        sportline = ["sport neq :%s" % n for n in ports]
+        sportjoin = ' and '.join(sportline)
         # 1.内容
         # ss_cmd = ss -ntp -o state established \'( sport != :%s )\'|grep -E %s|\
         # awk \'{print $4}\'|awk -F \':\' \'{print $(NF-1)\":\" $NF}\'' % (self.port,self.pid)
-        ssntpcmd = 'ss -ntp -o state established \\( %s \\)' % self.sportjoin
-        print("Begin to execute ss command: %s" % ssntpcmd)
-        ssntpcmd_result = subprocess.Popen(shlex.split(ssntpcmd), stdout=subprocess.PIPE)
-        ssntpcmd_result_text = ssntpcmd_result.communicate()[0]  # .decode('utf-8')
-        # print("ssntpcmd_result_text is %s" % ssntpcmd_result_text)
+        ss_ntp_cmd = 'ss -ntp -o state established \\( %s \\)' % sportjoin
+        print("Begin to execute ss command: %s" % ss_ntp_cmd)
+        ss_ntp_cmd_result = subprocess.Popen(shlex.split(ss_ntp_cmd), stdout=subprocess.PIPE)
+        ss_ntp_cmd_result_text = ss_ntp_cmd_result.communicate()[0]  # .decode('utf-8')
+        # print("ss_ntp_cmd_result_text is %s" % ss_ntp_cmd_result_text)
         filename = '/tmp/collect_service_ip_port_to_yed-ps-aux-%s-%s' % (project, datetime.datetime.now())
-        file = open(filename, 'w')
-        file.write(ssntpcmd_result_text)
-        file.close()
+        file_log = open(filename, 'w')
+        file_log.write(ss_ntp_cmd_result_text)
+        file_log.close()
         # 2.pattern&compile
-        ssntpcmd_pattern_pid = ',%s,' % self.pid
-        ssntpcmd_compile = re.compile(ssntpcmd_pattern_pid)
+        ss_ntp_cmd_pattern_pid = '|'.join(',{},'.format(n) for n in pids)
+        ss_ntp_cmd_compile = re.compile(ss_ntp_cmd_pattern_pid)
         # 3.match object
-        for ssntpcmd_result_line in ssntpcmd_result_text.splitlines():
-            ssntpcmd_re_findpid = ssntpcmd_compile.findall(ssntpcmd_result_line)
-            if ssntpcmd_re_findpid:
-                # print("当前连接池匹配行：%s" % ssntpcmd_result_line)
-                # print("当前pid匹配结果：%s" % ssntpcmd_re_findpid)
-                self.connect_to_ipportlist = ssntpcmd_result_line.split()[3].split(':')[-2:]
+        for ss_ntp_cmd_result_line in ss_ntp_cmd_result_text.splitlines():
+            ss_ntp_cmd_re_findpid = ss_ntp_cmd_compile.findall(ss_ntp_cmd_result_line)
+            if ss_ntp_cmd_re_findpid:
+                # print("当前连接池匹配行：%s" % ss_ntp_cmd_result_line)
+                # print("当前pid匹配结果：%s" % ss_ntp_cmd_re_findpid)
+                self.connect_to_ipportlist = ss_ntp_cmd_result_line.split()[3].split(':')[-2:]
                 # print("过滤出的连接池IP：port %s" % self.connect_to_ipportlist)
                 self.ipportmessage = ':'.join(self.connect_to_ipportlist)
                 self.poollists.append(self.ipportmessage)
