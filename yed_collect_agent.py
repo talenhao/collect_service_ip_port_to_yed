@@ -285,6 +285,7 @@ class AppListen(AppOp):
         file_log.close()
         # 2.pattern&compile
         ss_ntp_cmd_pattern_pid = '|'.join(',{},'.format(n) for n in pids)
+        print("ss_ntp_cmd_pattern_pid: %s " % ss_ntp_cmd_pattern_pid )
         ss_ntp_cmd_compile = re.compile(ss_ntp_cmd_pattern_pid)
         # 3.match object
         for ss_ntp_cmd_result_line in ss_ntp_cmd_result_text.splitlines():
