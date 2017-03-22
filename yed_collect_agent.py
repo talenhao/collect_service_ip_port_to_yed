@@ -36,11 +36,14 @@
     添加记录原始数据日志功能
     收集完监听pid未处理连接池之间，进程重启有一定机率匹配到其它启动起来占用原来pid，造成匹配信息错误。
     添加pid创建日期判断
+2017-03-22
+    listen port, pool ip port去重，节约处理时间
 未解决：
     使用psutil模块代替ps,ss收集信息。
 """
 
 from Application_operation import applicationOperation as AppOp
+import collect_common
 import subprocess
 import shlex
 import sys
@@ -129,6 +132,7 @@ class AppListen(AppOp):
             self.projects_name_list.append(self.row[0])
         return self.projects_name_list
 
+# 未完成
     def pid_create_time(self, project, pid):
         pid = pid
         project = project
@@ -225,13 +229,12 @@ class AppListen(AppOp):
         run_date_time = time.time()
         if not self.pidlist:
             return None
-        self.portlists = []
+        port_list = []
         # 1.内容
         # ss_cmd = "ss -lntp -4 |grep %s |awk -F: '{print $2}'|awk '{print $1}'" % ipid
         ss_cmd = 'ss -l -n -p -t'
         ss_cmd_result = subprocess.Popen(shlex.split(ss_cmd), stdout=subprocess.PIPE)
         ss_cmd_result_text = ss_cmd_result.communicate()[0]  # .decode('utf-8')
-        # print("ss -l结果： %s" % ss_cmd_result_text)
         filename = '/tmp/collect_service_ip_port_to_yed-ss-lnpt-%s-%s' % (project, datetime.datetime.now())
         file = open(filename, 'w')
         file.write(ss_cmd_result_text)
@@ -253,9 +256,10 @@ class AppListen(AppOp):
                 else:
                     print("%s 的进程%s数据有效，正在查找监听..." % (project, found_pid))
                     listen_port = ss_cmd_result_line.split()[3].split(':')[-1].strip()
-                    self.portlists.append(listen_port)
-        print("监听端口接收到的监听列表%s" % self.portlists)
-        return self.portlists
+                    port_list.append(listen_port)
+        port_list = collect_common.unique_list(port_list)
+        print("监听端口接收到的监听列表%s" % port_list)
+        return port_list
 
     def connectpools(self, project, ports, pids):
         """
@@ -267,7 +271,7 @@ class AppListen(AppOp):
         ports = ports
         pids = pids
         project = project
-        self.poollists = []
+        pool_list = []
         print("处理连接池，接收参数端口：%s，进程号：%s" % (ports, pids))
         sportline = ["sport neq :%s" % n for n in ports]
         sportjoin = ' and '.join(sportline)
@@ -297,9 +301,10 @@ class AppListen(AppOp):
                 self.connect_to_ipportlist = ss_ntp_cmd_result_line.split()[3].split(':')[-2:]
                 # print("过滤出的连接池IP：port %s" % self.connect_to_ipportlist)
                 self.ipportmessage = ':'.join(self.connect_to_ipportlist)
-                self.poollists.append(self.ipportmessage)
-        print("处理连接池，列表：%s" % self.poollists)
-        return self.poollists
+                pool_list.append(self.ipportmessage)
+        pool_list = collect_common.unique_list(pool_list)
+        print("处理连接池，列表：%s" % pool_list)
+        return pool_list
 
     def import2db(self, table, ipportcolumn, projectcolumn, message):
         """
