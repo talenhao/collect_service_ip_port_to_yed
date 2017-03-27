@@ -149,7 +149,8 @@ class AppListen(AppOp):
             self.projects_name_list.append(self.row[0])
         return self.projects_name_list
 
-# 未完成
+    # 未完成
+    @staticmethod
     def pid_create_time(self, project, pid):
         pid = pid
         project = project
