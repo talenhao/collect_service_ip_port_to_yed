@@ -4,7 +4,7 @@
 # ******************************************************
 # Author       : tianfei hao
 # Create Time  : 2017-03-20
-# Last modified: 2017-03-21
+# Last modified: 2017-03-27
 # Email        : talenhao@gmail.com
 # Description  : collect listen ip port and connect socket.
 # Version      : 2.0
@@ -38,8 +38,11 @@
     添加pid创建日期判断
 2017-03-22
     listen port, pool ip port去重，节约处理时间
+2017-03-27
+    使用multi-threads多线程处理
 未解决：
     使用psutil模块代替ps,ss收集信息。
+    使用日志模块记录日志
 """
 
 from Application_operation import applicationOperation as AppOp
@@ -54,10 +57,16 @@ import ConfigParser
 import psutil
 import datetime
 import time
+import multiprocessing
+import multiprocessing.dummy
+# import threading
+# from Queue import Queue
+# from itertools import repeat
 
-version = "2017-03-21"
+version = "2017-03-27"
 
 
+# 提示，帮助等装饰器。
 def help_check(func):
     def wrapper(*args, **kwargs):
         run_data_time = time.time()
@@ -65,12 +74,13 @@ def help_check(func):
         if sys.version_info < (2, 7):
             # raise RuntimeError('At least Python 3.4 is required')
             print('友情提示：当前系统版本低于2.7，建议升级python版本。')
+            
         if len(sys.argv) < 2:
             print('没有匹配规则配置文件')
             sys.exit()
+            
         if sys.argv[1].startswith('-'):
             option = sys.argv[1][1:]
-            # print(option)
             # fetch the first option without '-'.
             if option == '-version':
                 print('Version %s' % version)
@@ -93,6 +103,13 @@ def help_check(func):
             print("No Config file.")
             sys.exit()
     return wrapper
+
+
+def logfile(cmd_id, project, cmd_context):
+    filename = '/tmp/collect_service_ip_port_to_yed-%s-%s-%s' % (cmd_id, project, datetime.datetime.now())
+    logfile = open(filename, 'w')
+    logfile.write(cmd_context)
+    logfile.close()
 
 
 class AppListen(AppOp):
@@ -152,8 +169,7 @@ class AppListen(AppOp):
         :param project:
         :return:
         """
-        self.pid_lists = []
-        self.project = project
+        pid_lists = []
         self.pattern_s = pattern_string
         # print("Find out %s pid number." % self.project)
         # ps aux |grep -E '[D]catalina.home=/data/wire/tomcat'|awk '{print $2}'
@@ -175,28 +191,26 @@ class AppListen(AppOp):
         #                            % (self.project, self.project, self.project, self.project, self.project,
         #                               self.project, self.project)
         # version3:
-        ps_aux_pattern_string = self.pattern_s.format(projectname = self.project)
+        ps_aux_pattern_string = self.pattern_s.format(projectname=project)
         ps_aux_compile = re.compile(ps_aux_pattern_string)
         # try:
         # 3.match object
         for ps_aux_result_line in ps_aux_result_text.splitlines():
             ps_aux_re_find = ps_aux_compile.findall(ps_aux_result_line)
             if ps_aux_re_find:
-                filename = '/tmp/collect_service_ip_port_to_yed-ps-aux-%s-%s' % (self.project, datetime.datetime.now())
-                file = open(filename, 'w')
-                file.write(ps_aux_result_text)
-                file.close()
+                logfile('ps_aux', project, ps_aux_result_text)
                 print("Pattern is %s" % ps_aux_pattern_string)
                 print("Get： %s " % ps_aux_re_find)
                 pid = int(ps_aux_result_line.split()[1])
-                print('%s has a pid number %s ...' % (self.project, pid))
-                self.pid_lists.append(pid)
+                print('%s has a pid number %s ...' % (project, pid))
+                pid_lists.append(pid)
         # except subprocess.CalledProcessError:
-        if self.pid_lists:
-            print("project %s pid：%s" % (self.project, self.pid_lists))
+        if pid_lists:
+            print("project %s pid：%s" % (project, pid_lists))
         else:
-            print('%s is not in this host!' % self.project)
-        return self.pid_lists
+            time.sleep(1)
+            print('%s is not in this host!' % project)
+        return pid_lists
     
     def get_localhost_ip_list(self):
         """
@@ -223,7 +237,6 @@ class AppListen(AppOp):
         :return:
         """
         self.pidlist = pids
-        project = project
         # pid collect time: if the collection time is less than the creation time, the process has been killed and
         # the PID number is attached to the new process, then will drop this PID number.
         run_date_time = time.time()
@@ -235,10 +248,7 @@ class AppListen(AppOp):
         ss_cmd = 'ss -l -n -p -t'
         ss_cmd_result = subprocess.Popen(shlex.split(ss_cmd), stdout=subprocess.PIPE)
         ss_cmd_result_text = ss_cmd_result.communicate()[0]  # .decode('utf-8')
-        filename = '/tmp/collect_service_ip_port_to_yed-ss-lnpt-%s-%s' % (project, datetime.datetime.now())
-        file = open(filename, 'w')
-        file.write(ss_cmd_result_text)
-        file.close()
+        logfile("ss_lnpt", project, ss_cmd_result_text)
         # 2.pattern&compile
         ss_cmd_pattern_pid = '|'.join(format(n) for n in self.pidlist)
         print("pattern is :%s" % ss_cmd_pattern_pid)
@@ -268,9 +278,6 @@ class AppListen(AppOp):
         :param project:
         :return: 连接池
         """
-        ports = ports
-        pids = pids
-        project = project
         pool_list = []
         print("处理连接池，接收参数端口：%s，进程号：%s" % (ports, pids))
         sportline = ["sport neq :%s" % n for n in ports]
@@ -283,13 +290,9 @@ class AppListen(AppOp):
         ss_ntp_cmd_result = subprocess.Popen(shlex.split(ss_ntp_cmd), stdout=subprocess.PIPE)
         ss_ntp_cmd_result_text = ss_ntp_cmd_result.communicate()[0]  # .decode('utf-8')
         # print("ss_ntp_cmd_result_text is %s" % ss_ntp_cmd_result_text)
-        filename = '/tmp/collect_service_ip_port_to_yed-ss-ntp-%s-%s' % (project, datetime.datetime.now())
-        file_log = open(filename, 'w')
-        file_log.write(ss_ntp_cmd_result_text)
-        file_log.close()
+        logfile("ss_ntp", project, ss_ntp_cmd_result_text)
         # 2.pattern&compile
         ss_ntp_cmd_pattern_pid = '|'.join(",{0},".format(n) for n in pids)
-        print(type(ss_ntp_cmd_pattern_pid))
         print("ss_ntp_cmd_pattern_pid: %s " % ss_ntp_cmd_pattern_pid)
         ss_ntp_cmd_compile = re.compile(ss_ntp_cmd_pattern_pid)
         # 3.match object
@@ -306,7 +309,7 @@ class AppListen(AppOp):
         print("处理连接池，列表：%s" % pool_list)
         return pool_list
 
-    def import2db(self, table, ipportcolumn, projectcolumn, message):
+    def import2db(self, table, ipportcolumn, projectcolumn, message, project_name):
         """
         :param table:
         :param ipportcolumn:
@@ -329,7 +332,8 @@ class AppListen(AppOp):
             self.resultCursor.execute(sql_cmd)
             self.DBcon.commit()
         else:
-            print("%s is not have socket." % self.project)
+            # print("%s is not have socket." % project_name)
+            pass
 
     @staticmethod
     def start_line(info):
@@ -345,69 +349,153 @@ def app_l_collect():
     app_listen_instance = AppListen()
     # 取出应用名称
     # 初始化实例
+    pattern_string = app_listen_instance.config_file_parser(sys.argv[2])
     print("开始收集...")
     # Get project list
     app_listen_con_db_project_list = app_listen_instance.project_list()
-    pattern_string = app_listen_instance.config_file_parser(sys.argv[2])
+    local_ip_list = app_listen_instance.get_localhost_ip_list()
     # some values
     listen_table = "listentable"
     listen_ipport_column = 'lipport'
     connectpooltable = "pooltable"
     connectpool_ipport_column = 'conipport'
     projectcolumn = 'projectname'
-    local_ip_list = app_listen_instance.get_localhost_ip_list()
     #
     for project_item in app_listen_con_db_project_list:  # project name
-        to_db_ipport_project = []
-        to_db_conipport_project = []
-        # rows, columns = os.popen('stty size', 'r').read().split()
-        # print("=" * int(columns) + "\n 1.process project : %s \n" % project_item)
-        # Split line
-        app_listen_instance.start_line(project_item)
-        # pid list
-        from_db_pid_list = app_listen_instance.collect_pid_list(project_item, pattern_string)
-        if not from_db_pid_list:
-            # print("Have no project %s" % project_item)
-            app_listen_instance.end_line(project_item)
-            continue
-        else:
-            # port list
-            from_db_ports = app_listen_instance.listen_ports(project_item, from_db_pid_list)
-            if not from_db_ports:
-                print("Have no project listenports %s" % project_item)
-                app_listen_instance.end_line(project_item)
-                continue
-            else:
-                # print("2.查询到的pid列表：%s" % from_db_pid_list)
-                # 生成监听信息
-                for port in from_db_ports:
-                    # 导入监听表
-                    # 监听信息需要提前合成
-                    for ip in local_ip_list:
-                        ipport = str(ip)+':'+str(port)
-                        linfo = "('"+ipport+"','"+project_item+"')"
-                        to_db_ipport_project.append(linfo)
-                # print("%s listen infomation ok" % project_item)
-                # 生成连接池表
-                collect_con_ipport_list = app_listen_instance.connectpools(project_item, from_db_ports, from_db_pid_list)
-                # 生成连接池信息
-                for con in collect_con_ipport_list:
-                    # ','.join(map(lambda x: "('" + x[0] + "'," + str(int(x[1])) + ')', listen_group_id_project_name))
-                    cinfo = "('"+con+"','"+project_item+"')"
-                    # print("cinfo is :%s" % cinfo)
-                    to_db_conipport_project.append(cinfo)
-                # print("%s connect pool infomation ok" % project_item)
-        # print("导入ip列表%s" % to_db_ipport_project)
-        app_listen_instance.import2db(listen_table, listen_ipport_column, projectcolumn, to_db_ipport_project)
-        # print("导入connect列表%s" % to_db_conipport_project)
-        app_listen_instance.import2db(connectpooltable,
-                                      connectpool_ipport_column,
-                                      projectcolumn,
-                                      to_db_conipport_project
-                                      )
-        app_listen_instance.end_line(project_item)
+        do_collect(project_item, app_listen_instance, pattern_string, local_ip_list)
     app_listen_instance.finally_close_connect()
 
 
+def do_collect(project_name, instance, pattern_string, local_ip_list):
+    # 导入数据库的两个列表
+    to_db_ip_port_project = []
+    to_db_con_ip_port_project = []
+    # 初始变量
+    listen_table = "listentable"
+    listen_ipport_column = 'lipport'
+    connectpooltable = "pooltable"
+    connectpool_ipport_column = 'conipport'
+    projectcolumn = 'projectname'
+    # rows, columns = os.popen('stty size', 'r').read().split()
+    # print("=" * int(columns) + "\n 1.process project : %s \n" % project_name)
+    # Split line
+    instance.start_line(project_name)
+    # pid list
+    from_db_pid_list = instance.collect_pid_list(project_name, pattern_string)
+    if not from_db_pid_list:
+        # print("Have no project %s" % project_name)
+        instance.end_line(project_name)
+    else:
+        # port list
+        from_db_ports = instance.listen_ports(project_name, from_db_pid_list)
+        if not from_db_ports:
+            print("Have no project listen ports %s" % project_name)
+            instance.end_line(project_name)
+        else:
+            # print("2.查询到的pid列表：%s" % from_db_pid_list)
+            # 生成监听信息
+            for port in from_db_ports:
+                # 导入监听表
+                # 监听信息需要提前合成
+                for ip in local_ip_list:
+                    ip_port = str(ip) + ':' + str(port)
+                    listen_info = "('" + ip_port + "','" + project_name + "')"
+                    to_db_ip_port_project.append(listen_info)
+            # print("%s listen information ok" % project_name)
+            # 生成连接池表
+            collect_con_ip_port_list = instance.connectpools(project_name, from_db_ports, from_db_pid_list)
+            # 生成连接池信息
+            for con in collect_con_ip_port_list:
+                # ','.join(map(lambda x: "('" + x[0] + "'," + str(int(x[1])) + ')', listen_group_id_project_name))
+                con_info = "('" + con + "','" + project_name + "')"
+                to_db_con_ip_port_project.append(con_info)
+            instance.end_line(project_name)
+    instance.import2db(listen_table,
+                       listen_ipport_column,
+                       projectcolumn,
+                       to_db_ip_port_project,
+                       project_name)
+    instance.import2db(connectpooltable,
+                       connectpool_ipport_column,
+                       projectcolumn,
+                       to_db_con_ip_port_project,
+                       project_name)
+
+# 老式方法，放弃
+# def _collect_worker():
+#     thread_list = []
+#     app_listen_instance = AppListen()
+#     app_listen_con_db_project_list = app_listen_instance.project_list()
+#     loop = len(app_listen_con_db_project_list)
+#     for project_item in app_listen_con_db_project_list:  # project name
+#         thread_instance = threading.Thread(target=do_collect, args=(project_item,))
+#         thread_list.append(thread_instance)
+#     # 启动线程
+#     for instance_item in range(loop):
+#         thread_list[instance_item].start()
+#     # 等待所有线程结束
+#     for instance_item in range(loop):
+#         thread_list[instance_item].join()
+#     print("All collect thread finished.")
+# 
+  
+# class CollectWorker(threading.Thread):
+#     def __init__(self, queue):
+#         threading.Thread.__init__(self)
+#         self.queue = queue
+# 
+#     def run(self):
+#         while True:
+#             # 从队列中获取项目名
+#             project_item = self.queue.get()
+#             do_collect(project_item)
+#             self.queue.task_done()
+  
+  
+# def main():
+#     app_listen_instance = AppListen()
+#     app_listen_con_db_project_list = app_listen_instance.project_list()
+#     for worker in range(cpu_count()/6):
+#         worker = CollectWorker(Queue)
+#         worker.setDaemon(True)
+#         worker.start()
+#     for project_item in app_listen_con_db_project_list:
+#         Queue.put(project_item)
+#     Queue.join()
+#     print("All worker finished.")
+
+
+def spend_time(func):
+    def warpper(*args, **kwargs):
+        start_time = datetime.datetime.now()
+        print("开始%s" % start_time)
+        func(*args, **kwargs)
+        end_time = datetime.datetime.now()
+        print("结束%s,花费%s" % (end_time, end_time - start_time))
+    return warpper
+
+
+@spend_time
+@help_check
+def main():
+
+    # thread_num = multiprocessing.cpu_count()/4
+    thread_num = multiprocessing.cpu_count()/6
+    print("There have %s Threads" % thread_num)
+    app_listen_instance = AppListen()
+    pattern_string = app_listen_instance.config_file_parser(sys.argv[2])
+    local_ip_list = app_listen_instance.get_localhost_ip_list()
+    app_listen_con_db_project_list = app_listen_instance.project_list()
+    # Make the Pool of workers
+    pool = multiprocessing.dummy.Pool(processes=thread_num)
+    # Process collect project in their own threads
+    for project_item in app_listen_con_db_project_list:
+        pool.apply_async(do_collect, (project_item, app_listen_instance, pattern_string, local_ip_list))
+    # close the pool and wait for the work to finish
+    pool.close()
+    pool.join()
+
+
 if __name__ == "__main__":
-    app_l_collect()
+    # app_l_collect()
+    main()

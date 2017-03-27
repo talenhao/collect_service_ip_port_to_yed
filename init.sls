@@ -4,26 +4,6 @@ init_dir:
     - absent
     - name: /tmp/collect_service_ip_port_to_yed/
 
-python_require_common_package: # id
-  pkg.installed: # state.funcation
-    - pkgs:
-      - python-pip
-      - python-devel
-#      - python-netifaces
-      - git
-      - MySQL-python
-
-python_pip_require:
-  pip.installed:
-    - names:
-#      - MySQL-python
-      - psutil >= 5.2.0
-      - netifaces
-#      - pip
-    - upgrade: True
-    - require:
-      - pkg: python_require_common_package
-
 run_dir:
   file.directory:
     - name: /tmp/collect_service_ip_port_to_yed/
@@ -45,17 +25,16 @@ collect2yed_git:
     - target: /tmp/collect_service_ip_port_to_yed/
     - force_reset: True
     - require:
-      - pkg: python_require_common_package
       - file: run_dir
 
 yed_collect_agent:
   cmd.run:
-    - name: python yed_collect_agent.py -c yed_collect.conf|tee /tmp/collect_service_ip_port_to_yed.log.$(date +%F.%T)
+    - name: if test -f /var/local/python2.7.13/bin/python ; then RUNPYTHON=/var/local/python2.7.13/bin/python ; else RUNPYTHON=python ; fi && $RUNPYTHON yed_collect_agent.py -c yed_collect.conf|tee /tmp/collect_service_ip_port_to_yed.log.$(date +%F.%T)
     - cwd: /tmp/collect_service_ip_port_to_yed
     - timeout: 82800
+    - user: root
     - require:
       - git: collect2yed_git
-      - pip: python_pip_require
 
 rm_files:
   file:
