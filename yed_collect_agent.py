@@ -477,7 +477,7 @@ def spend_time(func):
 @help_check
 def main():
 
-    thread_num = multiprocessing.cpu_count()
+    thread_num = multiprocessing.cpu_count()/6
     # thread_num = multiprocessing.cpu_count()
     print("There have %s Threads" % thread_num)
     app_listen_instance = AppListen()
