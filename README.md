@@ -3,11 +3,11 @@
 收集服务信息导入数据库，然后根据连接socket情况分析导出为EXCEL，使用yed自动生成服务架构图。
 使用saltstack推送。
 ----
-![image](https://github.com/talenhao/collect_service_ip_port_to_yed/tree/master/screenshots/Screenshot_20170328_164815.png)
-![image](https://github.com/talenhao/collect_service_ip_port_to_yed/tree/master/screenshots/Screenshot_20170328_164828.png)
-![image](https://github.com/talenhao/collect_service_ip_port_to_yed/tree/master/screenshots/Screenshot_20170328_164843.png)
-![image](https://github.com/talenhao/collect_service_ip_port_to_yed/tree/master/screenshots/Screenshot_20170328_164854.png)
-![image](https://github.com/talenhao/collect_service_ip_port_to_yed/tree/master/screenshots/Screenshot_20170328_165002.png)
+![image](https://github.com/talenhao/collect_service_ip_port_to_yed/blob/master/screenshots/Screenshot_20170328_164815.png?raw=true)
+![image](https://github.com/talenhao/collect_service_ip_port_to_yed/blob/master/screenshots/Screenshot_20170328_164828.png?raw=true)
+![image](https://github.com/talenhao/collect_service_ip_port_to_yed/blob/master/screenshots/Screenshot_20170328_164843.png?raw=true)
+![image](https://github.com/talenhao/collect_service_ip_port_to_yed/blob/master/screenshots/Screenshot_20170328_164854.png?raw=true)
+![image](https://github.com/talenhao/collect_service_ip_port_to_yed/blob/master/screenshots/Screenshot_20170328_165002.png?raw=true)
 ----
         收集信息=》存储
         yum install -y python-netifaces MySQL-python
