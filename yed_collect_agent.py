@@ -213,7 +213,7 @@ class AppListen(AppOp):
         return pid_lists
 
     @staticmethod
-    def get_localhost_ip_list(self):
+    def get_localhost_ip_list():
         """
         获取本机所有IP信息
         """
