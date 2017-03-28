@@ -40,6 +40,11 @@
     listen port, pool ip port去重，节约处理时间
 2017-03-27
     使用multi-threads多线程处理
+2017-03-28
+    添加pool列表pid有效判断
+    去掉多余self
+    部分方法修改成静态方法
+    添加网卡ip提示
 未解决：
     使用psutil模块代替ps,ss收集信息。
     使用日志模块记录日志
@@ -206,6 +211,8 @@ class AppListen(AppOp):
                 print('%s has a pid number %s ...' % (project, pid))
                 pid_lists.append(pid)
         # except subprocess.CalledProcessError:
+        # pid一般不会重复
+        # pid_lists = collect_common.unique_list(pid_lists)
         if pid_lists:
             print("project %s pid：%s" % (project, pid_lists))
         else:
@@ -233,9 +240,11 @@ class AppListen(AppOp):
         print("Local collect IP: %s" % card_ip_list)
         return card_ip_list
 
-    def listen_ports(self, project, pid_list):
+    @staticmethod
+    def listen_ports(project, pid_list):
         """
-        :param pid_list:
+        :param pid_list
+        :param project:
         :return:
         """
         # pid collect time: if the collection time is less than the creation time, the process has been killed and
@@ -267,7 +276,9 @@ class AppListen(AppOp):
                 else:
                     print("%s 的进程%s数据有效，正在查找监听..." % (project, found_pid))
                     listen_port = ss_cmd_result_line.split()[3].split(':')[-1].strip()
+                    print("找到监听端口：%s" % listen_port)
                     port_list.append(listen_port)
+        # 监听端口去重
         port_list = collect_common.unique_list(port_list)
         print("监听端口接收到的监听列表%s" % port_list)
         return port_list
@@ -280,20 +291,22 @@ class AppListen(AppOp):
         :param project:
         :return: 连接池
         """
+        run_date_time = time.time()
         pool_list = []
         print("处理连接池，接收参数端口：%s，进程号：%s" % (ports, pid_list))
-        sport_line = ["sport neq :%s" % n for n in ports]
-        sport_join = ' and '.join(sport_line)
+        s_port_line = ["sport neq :%s" % n for n in ports]
+        s_port_join = ' and '.join(s_port_line)
         # 1.内容
         # ss_cmd = ss -ntp -o state established \'( sport != :%s )\'|grep -E %s|\
         # awk \'{print $4}\'|awk -F \':\' \'{print $(NF-1)\":\" $NF}\'' % (self.port,self.pid)
-        ss_ntp_cmd = 'ss -ntp -o state established \\( %s \\)' % sport_join
-        print("Begin to execute ss command: %s" % ss_ntp_cmd)
+        ss_ntp_cmd = 'ss -ntp -o state established \\( %s \\)' % s_port_join
+        print("Begin to execute ss connection command: %s" % ss_ntp_cmd)
         ss_ntp_cmd_result = subprocess.Popen(shlex.split(ss_ntp_cmd), stdout=subprocess.PIPE)
         ss_ntp_cmd_result_text = ss_ntp_cmd_result.communicate()[0]  # .decode('utf-8')
         # print("ss_ntp_cmd_result_text is %s" % ss_ntp_cmd_result_text)
         logfile("ss_ntp", project, ss_ntp_cmd_result_text)
         # 2.pattern&compile
+        # 判断pid是否有效
         ss_ntp_cmd_pattern_pid = '|'.join(",{0},".format(n) for n in pid_list)
         print("ss_ntp_cmd_pattern_pid: %s " % ss_ntp_cmd_pattern_pid)
         ss_ntp_cmd_compile = re.compile(ss_ntp_cmd_pattern_pid)
@@ -301,12 +314,22 @@ class AppListen(AppOp):
         for ss_ntp_cmd_result_line in ss_ntp_cmd_result_text.splitlines():
             ss_ntp_cmd_re_findpid = ss_ntp_cmd_compile.findall(ss_ntp_cmd_result_line)
             if ss_ntp_cmd_re_findpid:
-                # print("当前连接池匹配行：%s" % ss_ntp_cmd_result_line)
-                # print("当前pid匹配结果：%s" % ss_ntp_cmd_re_findpid)
-                connect_ip_port_list = ss_ntp_cmd_result_line.split()[3].split(':')[-2:]
-                # print("过滤出的连接池IP：port %s" % connect_ip_port_list)
-                ip_port_message = ':'.join(connect_ip_port_list)
-                pool_list.append(ip_port_message)
+                found_pid = int(ss_ntp_cmd_re_findpid[0])
+                print("检查连接池传入的PID.\n Import pid is %s " % found_pid)
+                pid_create_time = psutil.Process(pid=found_pid).create_time()
+                if pid_create_time > run_date_time:
+                    print("%s 的进程%s已经被其它程序使用，数据失效，丢弃..." % (project, found_pid))
+                    continue
+                else:
+                    print("%s 的进程%s数据有效，放入pattern列表..." % (project, found_pid))
+                    print("找到有效PID：%s" % found_pid)
+                    # print("当前连接池匹配行：%s" % ss_ntp_cmd_result_line)
+                    # print("当前pid匹配结果：%s" % ss_ntp_cmd_re_findpid)
+                    connect_ip_port_list = ss_ntp_cmd_result_line.split()[3].split(':')[-2:]
+                    # print("过滤出的连接池IP：port %s" % connect_ip_port_list)
+                    ip_port_message = ':'.join(connect_ip_port_list)
+                    pool_list.append(ip_port_message)
+        # 连接池列表去重
         pool_list = collect_common.unique_list(pool_list)
         print("处理连接池，列表：%s" % pool_list)
         return pool_list
