@@ -226,6 +226,7 @@ class AppListen(AppOp):
             except KeyError:
                 print("%s is not have ip" % interface_card)
             else:
+                print("%s is have ip %s" % (interface_card, card_ip_address))
                 card_ip_list.append(card_ip_address)
         # 如果服务监听端口无重复可以打开
         # card_ip_list_all = card_ip_list.remove('127.0.0.1')
