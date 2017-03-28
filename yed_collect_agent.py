@@ -208,7 +208,7 @@ class AppListen(AppOp):
                 print("Pattern is %s" % ps_aux_pattern_string)
                 print("Get： %s " % ps_aux_re_find)
                 pid = int(ps_aux_result_line.split()[1])
-                print('%s has a pid number %s ...' % (project, pid))
+                print('_' * 50 + '%s has a pid number %s ...' % (project, pid))
                 pid_lists.append(pid)
         # except subprocess.CalledProcessError:
         # pid一般不会重复
@@ -390,7 +390,8 @@ def app_l_collect():
 
 def do_collect(project_name, instance, pattern_string, local_ip_list):
     # 导入数据库的两个列表
-    print("当前执行：%s, %s" % (project_name, pattern_string))
+    #print("当前执行：%s, %s" % (project_name, pattern_string))
+    print("当前执行：%s" % project_name)
     to_db_ip_port_project = []
     to_db_con_ip_port_project = []
     # 初始变量
