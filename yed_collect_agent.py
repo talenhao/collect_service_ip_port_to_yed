@@ -63,7 +63,7 @@ import multiprocessing.dummy
 # from Queue import Queue
 # from itertools import repeat
 
-version = "2017-03-27"
+version = "2017-03-28"
 
 
 # 提示，帮助等装饰器。
@@ -145,13 +145,13 @@ class AppListen(AppOp):
         # print(sql_cmd)
         self.resultCursor.execute(sql_cmd)
         for row in self.resultCursor.fetchall():
-            print("project name: %s" % row)
+            print("Fetch project name from database : %s" % row)
             projects_name_list.append(row[0])
         return projects_name_list
 
     # 未完成
     @staticmethod
-    def pid_create_time(self, project, pid):
+    def pid_create_time(project, pid):
         pid = pid
         project = project
         run_date_time = time.time()
@@ -165,7 +165,7 @@ class AppListen(AppOp):
             return found_pid
 
     @staticmethod
-    def collect_pid_list(self, project, pattern_string):
+    def collect_pid_list(project, pattern_string):
         """
         查找指定程序的PID
         :param project, pattern_string:
@@ -315,6 +315,7 @@ class AppListen(AppOp):
         :param table:
         :param ip_port_column:
         :param project_column:
+        :param project_name:
         :param message:
         :return:
         """
@@ -329,16 +330,16 @@ class AppListen(AppOp):
             self.resultCursor.execute(sql_cmd)
             self.DBcon.commit()
         else:
-            # print("%s is not have socket." % project_name)
-            pass
+            print("%s is not have socket." % project_name)
+            # pass
 
     @staticmethod
     def start_line(info):
-        print(">" * 80 + "\n process project start : %s \n" % info)
+        print("\n" + ">" * 50 + "process project start : %s" % info)
 
     @staticmethod
     def end_line(info):
-        print("\n process project finish : %s \n" % info + "<" * 80)
+        print("\n" + "<" * 50 + "process project finish : %s " % info)
 
 
 @help_check
@@ -365,7 +366,7 @@ def app_l_collect():
 
 def do_collect(project_name, instance, pattern_string, local_ip_list):
     # 导入数据库的两个列表
-    print("当前执行：%s" % project_name)
+    print("当前执行：%s" % project_name, pattern_string)
     to_db_ip_port_project = []
     to_db_con_ip_port_project = []
     # 初始变量
