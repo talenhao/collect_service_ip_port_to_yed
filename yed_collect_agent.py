@@ -306,7 +306,6 @@ class AppListen(AppOp):
         # print("ss_ntp_cmd_result_text is %s" % ss_ntp_cmd_result_text)
         logfile("ss_ntp", project, ss_ntp_cmd_result_text)
         # 2.pattern&compile
-        # 判断pid是否有效
         ss_ntp_cmd_pattern_pid = '|'.join(",{0},".format(n) for n in pid_list)
         print("ss_ntp_cmd_pattern_pid: %s " % ss_ntp_cmd_pattern_pid)
         ss_ntp_cmd_compile = re.compile(ss_ntp_cmd_pattern_pid)
@@ -314,6 +313,8 @@ class AppListen(AppOp):
         for ss_ntp_cmd_result_line in ss_ntp_cmd_result_text.splitlines():
             ss_ntp_cmd_re_findpid = ss_ntp_cmd_compile.findall(ss_ntp_cmd_result_line)
             if ss_ntp_cmd_re_findpid:
+                # 判断pid是否有效
+                print('ss_ntp_cmd_re_findpid' % ss_ntp_cmd_re_findpid)
                 found_pid = int(ss_ntp_cmd_re_findpid[0])
                 print("检查连接池传入的PID.\n Import pid is %s " % found_pid)
                 pid_create_time = psutil.Process(pid=found_pid).create_time()
