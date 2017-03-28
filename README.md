@@ -10,7 +10,6 @@
 ![image](https://github.com/talenhao/collect_service_ip_port_to_yed/blob/master/screenshots/Screenshot_20170328_165002.png?raw=true)
 ----
         收集信息=》存储
-        yum install -y python-netifaces MySQL-python
 
         2017-02-27
             2.6.6版本不支持subprocess.check_out,修改为subprocess.Popen(["ls", "-a"], stdout=subprocess.PIPE).communicate()[0]

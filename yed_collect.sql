@@ -1,6 +1,6 @@
--- MySQL dump 10.16  Distrib 10.1.21-MariaDB, for Linux (x86_64)
+-- MySQL dump 10.16  Distrib 10.1.22-MariaDB, for Linux (x86_64)
 --
--- Host: 192.168.1.138    Database: 192.168.1.138
+-- Host: 192.168.1.138    Database: yed_collect
 -- ------------------------------------------------------
 -- Server version	5.6.27-log
 
@@ -43,7 +43,7 @@ CREATE TABLE `application` (
   `group_id` tinyint(4) DEFAULT NULL,
   PRIMARY KEY (`project_id`),
   UNIQUE KEY `projectname` (`projectname`)
-) ENGINE=InnoDB AUTO_INCREMENT=131 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=157 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -73,7 +73,7 @@ CREATE TABLE `nodes` (
   `node` varchar(40) NOT NULL,
   PRIMARY KEY (`node_id`),
   UNIQUE KEY `node` (`node`)
-) ENGINE=InnoDB AUTO_INCREMENT=327 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -99,4 +99,4 @@ CREATE TABLE `pooltable` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-03-16 14:35:24
+-- Dump completed on 2017-03-28 17:19:09
