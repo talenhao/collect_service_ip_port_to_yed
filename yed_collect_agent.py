@@ -164,6 +164,7 @@ class AppListen(AppOp):
             print("%s 的进程%s数据有效，正在查找监听..." % (project, found_pid))
             return found_pid
 
+    @staticmethod
     def collect_pid_list(self, project, pattern_string):
         """
         查找指定程序的PID
@@ -269,29 +270,30 @@ class AppListen(AppOp):
         port_list = collect_common.unique_list(port_list)
         print("监听端口接收到的监听列表%s" % port_list)
         return port_list
-
-    def connectpools(self, project, ports, pids):
+    
+    @staticmethod
+    def connect_pool(project, ports, pid_list):
         """
         :param ports:
-        :param pids:
+        :param pid_list:
         :param project:
         :return: 连接池
         """
         pool_list = []
-        print("处理连接池，接收参数端口：%s，进程号：%s" % (ports, pids))
-        sportline = ["sport neq :%s" % n for n in ports]
-        sportjoin = ' and '.join(sportline)
+        print("处理连接池，接收参数端口：%s，进程号：%s" % (ports, pid_list))
+        sport_line = ["sport neq :%s" % n for n in ports]
+        sport_join = ' and '.join(sport_line)
         # 1.内容
         # ss_cmd = ss -ntp -o state established \'( sport != :%s )\'|grep -E %s|\
         # awk \'{print $4}\'|awk -F \':\' \'{print $(NF-1)\":\" $NF}\'' % (self.port,self.pid)
-        ss_ntp_cmd = 'ss -ntp -o state established \\( %s \\)' % sportjoin
+        ss_ntp_cmd = 'ss -ntp -o state established \\( %s \\)' % sport_join
         print("Begin to execute ss command: %s" % ss_ntp_cmd)
         ss_ntp_cmd_result = subprocess.Popen(shlex.split(ss_ntp_cmd), stdout=subprocess.PIPE)
         ss_ntp_cmd_result_text = ss_ntp_cmd_result.communicate()[0]  # .decode('utf-8')
         # print("ss_ntp_cmd_result_text is %s" % ss_ntp_cmd_result_text)
         logfile("ss_ntp", project, ss_ntp_cmd_result_text)
         # 2.pattern&compile
-        ss_ntp_cmd_pattern_pid = '|'.join(",{0},".format(n) for n in pids)
+        ss_ntp_cmd_pattern_pid = '|'.join(",{0},".format(n) for n in pid_list)
         print("ss_ntp_cmd_pattern_pid: %s " % ss_ntp_cmd_pattern_pid)
         ss_ntp_cmd_compile = re.compile(ss_ntp_cmd_pattern_pid)
         # 3.match object
@@ -308,19 +310,19 @@ class AppListen(AppOp):
         print("处理连接池，列表：%s" % pool_list)
         return pool_list
 
-    def import2db(self, table, ipportcolumn, projectcolumn, message, project_name):
+    def import2db(self, table, ip_port_column, project_column, message, project_name):
         """
         :param table:
-        :param ipportcolumn:
-        :param projectcolumn:
+        :param ip_port_column:
+        :param project_column:
         :param message:
         :return:
         """
         if len(message) > 0:
             sql_cmd = "INSERT ignore INTO %s (%s,%s) VALUES %s" % (
                 table,
-                ipportcolumn,
-                projectcolumn,
+                ip_port_column,
+                project_column,
                 ','.join(message)
             )
             # print(sql_cmd)
@@ -349,12 +351,12 @@ def app_l_collect():
     # Get project list
     app_listen_con_db_project_list = app_listen_instance.project_list()
     local_ip_list = app_listen_instance.get_localhost_ip_list()
-    # some values
-    listen_table = "listentable"
-    listen_ipport_column = 'lipport'
-    connectpooltable = "pooltable"
-    connectpool_ipport_column = 'conipport'
-    projectcolumn = 'projectname'
+#    # some values
+#    listen_table = "listentable"
+#    listen_ipport_column = 'lipport'
+#    connectpooltable = "pooltable"
+#    connectpool_ipport_column = 'conipport'
+#    project_column = 'projectname'
     #
     for project_item in app_listen_con_db_project_list:  # project name
         do_collect(project_item, app_listen_instance, pattern_string, local_ip_list)
@@ -371,7 +373,7 @@ def do_collect(project_name, instance, pattern_string, local_ip_list):
     listen_ipport_column = 'lipport'
     connectpooltable = "pooltable"
     connectpool_ipport_column = 'conipport'
-    projectcolumn = 'projectname'
+    project_column = 'projectname'
     # rows, columns = os.popen('stty size', 'r').read().split()
     # print("=" * int(columns) + "\n 1.process project : %s \n" % project_name)
     # Split line
@@ -399,7 +401,7 @@ def do_collect(project_name, instance, pattern_string, local_ip_list):
                     to_db_ip_port_project.append(listen_info)
             # print("%s listen information ok" % project_name)
             # 生成连接池表
-            collect_con_ip_port_list = instance.connectpools(project_name, from_db_ports, from_db_pid_list)
+            collect_con_ip_port_list = instance.connect_pool(project_name, from_db_ports, from_db_pid_list)
             # 生成连接池信息
             for con in collect_con_ip_port_list:
                 # ','.join(map(lambda x: "('" + x[0] + "'," + str(int(x[1])) + ')', listen_group_id_project_name))
@@ -408,12 +410,12 @@ def do_collect(project_name, instance, pattern_string, local_ip_list):
             instance.end_line(project_name)
     instance.import2db(listen_table,
                        listen_ipport_column,
-                       projectcolumn,
+                       project_column,
                        to_db_ip_port_project,
                        project_name)
     instance.import2db(connectpooltable,
                        connectpool_ipport_column,
-                       projectcolumn,
+                       project_column,
                        to_db_con_ip_port_project,
                        project_name)
 
@@ -475,7 +477,7 @@ def spend_time(func):
 @help_check
 def main():
 
-    thread_num = multiprocessing.cpu_count()/6
+    thread_num = multiprocessing.cpu_count()
     # thread_num = multiprocessing.cpu_count()
     print("There have %s Threads" % thread_num)
     app_listen_instance = AppListen()
@@ -486,7 +488,6 @@ def main():
     pool = multiprocessing.dummy.Pool(processes=thread_num)
     # Process collect project in their own threads
     for project_item in app_listen_con_db_project_list:
-        print("当前进程：%s" % multiprocessing.current_process().name)
         pool.apply_async(do_collect, args=(project_item, app_listen_instance, pattern_string, local_ip_list))
     # close the pool and wait for the work to finish
     pool.close()
