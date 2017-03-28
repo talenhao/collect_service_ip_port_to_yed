@@ -330,7 +330,7 @@ class AppListen(AppOp):
                     ip_port_message = ':'.join(connect_ip_port_list)
                     pool_list.append(ip_port_message)
             else:
-                print("ss_ntp_cmd_re_findpid is none.")
+                print("project %s ss_ntp_cmd_re_findpid is none." % project)
         # 连接池列表去重
         pool_list = collect_common.unique_list(pool_list)
         print("处理连接池，列表：%s" % pool_list)
