@@ -121,7 +121,6 @@ class AppListen(AppOp):
         AppOp.__init__(self)
         # self.projecttable = "application"
         # self.group_table = "appgroup"
-        self.projects_name_list = []
 
     @staticmethod
     def config_file_parser(config_file):
@@ -141,13 +140,14 @@ class AppListen(AppOp):
         加载服务列表
         :return: project list
         """
+        projects_name_list = []
         sql_cmd = "SELECT projectname from %s" % self.projecttable  # self.projecttable来自AppOp
         # print(sql_cmd)
         self.resultCursor.execute(sql_cmd)
-        for self.row in self.resultCursor.fetchall():
-            print("project name: %s" % self.row)
-            self.projects_name_list.append(self.row[0])
-        return self.projects_name_list
+        for row in self.resultCursor.fetchall():
+            print("project name: %s" % row)
+            projects_name_list.append(row[0])
+        return projects_name_list
 
     # 未完成
     @staticmethod
@@ -167,12 +167,11 @@ class AppListen(AppOp):
     def collect_pid_list(self, project, pattern_string):
         """
         查找指定程序的PID
-        :param project:
+        :param project, pattern_string:
         :return:
         """
         pid_lists = []
-        self.pattern_s = pattern_string
-        # print("Find out %s pid number." % self.project)
+        # print("Find out %s pid number." % project)
         # ps aux |grep -E '[D]catalina.home=/data/wire/tomcat'|awk '{print $2}'
         # 1.内容
         # 1命令
@@ -182,17 +181,17 @@ class AppListen(AppOp):
         # 3结果
         ps_aux_result_text = ps_aux_result.communicate()[0]  # .decode('utf-8')
         # 2.pattern&compile
-        # version1: ps_aux_pattern_string = 'Dcatalina.home=/[-\w]+/%s/tomcat' % self.project
+        # version1: ps_aux_pattern_string = 'Dcatalina.home=/[-\w]+/%s/tomcat' % project
         # version2: ps_aux_pattern_string = 'Dcatalina.home=/[-\w]+/%s/(?:tomcat|server|log)' \
         #                            '|\./bin/%s\ (?:-c\ conf/%s\.conf)?' \
         #                            '|java -D%s.*\.jar.*/conf/zoo.cfg.*'\
         #                            '|%s: [\w]+ process'\
         #                            '|%s: pool www' \
         #                            '|java -cp /etc/%s/conf' \
-        #                            % (self.project, self.project, self.project, self.project, self.project,
-        #                               self.project, self.project)
+        #                            % (project, project, project, project, project,
+        #                               project, project)
         # version3:
-        ps_aux_pattern_string = self.pattern_s.format(projectname=project)
+        ps_aux_pattern_string = pattern_string.format(projectname=project)
         ps_aux_compile = re.compile(ps_aux_pattern_string)
         # try:
         # 3.match object
@@ -212,36 +211,35 @@ class AppListen(AppOp):
             time.sleep(1)
             print('%s is not in this host!' % project)
         return pid_lists
-    
+
+    @staticmethod
     def get_localhost_ip_list(self):
         """
         获取本机所有IP信息
         """
         print('Collect localhost IP addresses.')
-        self.card_ip_list = []
+        card_ip_list = []
         for interface_card in netifaces.interfaces():
             try:
                 card_ip_address = netifaces.ifaddresses(interface_card)[netifaces.AF_INET][0]['addr']
             except KeyError:
                 print("%s is not have ip" % interface_card)
             else:
-                self.card_ip_list.append(card_ip_address)
+                card_ip_list.append(card_ip_address)
         # 如果服务监听端口无重复可以打开
-        # self.card_ip_list_all = self.card_ip_list.remove('127.0.0.1')
-        print("Local collect IP: %s" % self.card_ip_list)
-        return self.card_ip_list
+        # card_ip_list_all = card_ip_list.remove('127.0.0.1')
+        print("Local collect IP: %s" % card_ip_list)
+        return card_ip_list
 
-    def listen_ports(self, project, pids):
+    def listen_ports(self, project, pid_list):
         """
-        接收列表[pids]
-        :param pids:
+        :param pid_list:
         :return:
         """
-        self.pidlist = pids
         # pid collect time: if the collection time is less than the creation time, the process has been killed and
         # the PID number is attached to the new process, then will drop this PID number.
         run_date_time = time.time()
-        if not self.pidlist:
+        if not pid_list:
             return None
         port_list = []
         # 1.内容
@@ -251,7 +249,7 @@ class AppListen(AppOp):
         ss_cmd_result_text = ss_cmd_result.communicate()[0]  # .decode('utf-8')
         logfile("ss_lnpt", project, ss_cmd_result_text)
         # 2.pattern&compile
-        ss_cmd_pattern_pid = '|'.join(format(n) for n in self.pidlist)
+        ss_cmd_pattern_pid = '|'.join(format(n) for n in pid_list)
         print("pattern is :%s" % ss_cmd_pattern_pid)
         ss_cmd_compile = re.compile(ss_cmd_pattern_pid)
         # 3.match object
@@ -302,10 +300,10 @@ class AppListen(AppOp):
             if ss_ntp_cmd_re_findpid:
                 # print("当前连接池匹配行：%s" % ss_ntp_cmd_result_line)
                 # print("当前pid匹配结果：%s" % ss_ntp_cmd_re_findpid)
-                self.connect_to_ipportlist = ss_ntp_cmd_result_line.split()[3].split(':')[-2:]
-                # print("过滤出的连接池IP：port %s" % self.connect_to_ipportlist)
-                self.ipportmessage = ':'.join(self.connect_to_ipportlist)
-                pool_list.append(self.ipportmessage)
+                connect_ip_port_list = ss_ntp_cmd_result_line.split()[3].split(':')[-2:]
+                # print("过滤出的连接池IP：port %s" % connect_ip_port_list)
+                ip_port_message = ':'.join(connect_ip_port_list)
+                pool_list.append(ip_port_message)
         pool_list = collect_common.unique_list(pool_list)
         print("处理连接池，列表：%s" % pool_list)
         return pool_list
@@ -319,15 +317,11 @@ class AppListen(AppOp):
         :return:
         """
         if len(message) > 0:
-            self.message = message
-            self.ipportcolumn = ipportcolumn
-            self.table = table
-            self.projectcolumn = projectcolumn
             sql_cmd = "INSERT ignore INTO %s (%s,%s) VALUES %s" % (
-                self.table,
-                self.ipportcolumn,
-                self.projectcolumn,
-                ','.join(self.message)
+                table,
+                ipportcolumn,
+                projectcolumn,
+                ','.join(message)
             )
             # print(sql_cmd)
             self.resultCursor.execute(sql_cmd)
@@ -369,6 +363,7 @@ def app_l_collect():
 
 def do_collect(project_name, instance, pattern_string, local_ip_list):
     # 导入数据库的两个列表
+    print("当前执行：%s" % project_name)
     to_db_ip_port_project = []
     to_db_con_ip_port_project = []
     # 初始变量
@@ -481,7 +476,7 @@ def spend_time(func):
 def main():
 
     # thread_num = multiprocessing.cpu_count()/4
-    thread_num = multiprocessing.cpu_count()/6
+    thread_num = multiprocessing.cpu_count()
     print("There have %s Threads" % thread_num)
     app_listen_instance = AppListen()
     pattern_string = app_listen_instance.config_file_parser(sys.argv[2])
@@ -491,7 +486,8 @@ def main():
     pool = multiprocessing.dummy.Pool(processes=thread_num)
     # Process collect project in their own threads
     for project_item in app_listen_con_db_project_list:
-        pool.apply_async(do_collect, (project_item, app_listen_instance, pattern_string, local_ip_list))
+        print("当前进程：%s" % multiprocessing.current_process().name)
+        pool.apply_async(do_collect, args=(project_item, app_listen_instance, pattern_string, local_ip_list))
     # close the pool and wait for the work to finish
     pool.close()
     pool.join()
