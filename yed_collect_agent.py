@@ -260,14 +260,15 @@ class AppListen(AppOp):
         ss_cmd_result_text = ss_cmd_result.communicate()[0]  # .decode('utf-8')
         logfile("ss_lnpt", project, ss_cmd_result_text)
         # 2.pattern&compile
-        ss_cmd_pattern_pid = '|'.join(format(n) for n in pid_list)
+        # 修复359会匹配23592造成数据错误问题
+        ss_cmd_pattern_pid = '|'.join(",{0},".format(n) for n in pid_list)
         print("pattern is :%s" % ss_cmd_pattern_pid)
         ss_cmd_compile = re.compile(ss_cmd_pattern_pid)
         # 3.match object
         for ss_cmd_result_line in ss_cmd_result_text.splitlines():
             ss_cmd_re_findpid = ss_cmd_compile.findall(ss_cmd_result_line)
             if ss_cmd_re_findpid:
-                found_pid = int(ss_cmd_re_findpid[0])
+                found_pid = int(ss_cmd_re_findpid[0].split(',')[1])
                 print("ss_cmd_re_findpid is %s " % found_pid)
                 pid_create_time = psutil.Process(pid=found_pid).create_time()
                 if pid_create_time > run_date_time:
