@@ -367,7 +367,7 @@ def app_l_collect():
 
 def do_collect(project_name, instance, pattern_string, local_ip_list):
     # 导入数据库的两个列表
-    print("当前执行：%s" % project_name, pattern_string)
+    print("当前执行：%s, %s" % (project_name, pattern_string))
     to_db_ip_port_project = []
     to_db_con_ip_port_project = []
     # 初始变量
