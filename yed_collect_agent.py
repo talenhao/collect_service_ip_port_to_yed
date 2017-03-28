@@ -354,8 +354,8 @@ class AppListen(AppOp):
             self.resultCursor.execute(sql_cmd)
             self.DBcon.commit()
         else:
-            print("%s is not have socket." % project_name)
-            # pass
+            # print("%s is not have socket." % project_name)
+            pass
 
     @staticmethod
     def start_line(info):

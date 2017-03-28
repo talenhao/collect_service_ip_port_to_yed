@@ -3,7 +3,8 @@
 收集服务信息导入数据库，然后根据连接socket情况分析导出为EXCEL，使用yed自动生成服务架构图。
 使用saltstack推送。
 ----
-
+![image](https://github.com/ButBueatiful/dotvim/raw/master/screenshots/vim-screenshot.jpg)
+Screenshot_20170328_164815.png  Screenshot_20170328_164828.png  Screenshot_20170328_164843.png  Screenshot_20170328_164854.png  Screenshot_20170328_165002.png
 ----
         收集信息=》存储
         yum install -y python-netifaces MySQL-python
@@ -37,6 +38,11 @@
             listen port, pool ip port去重，节约处理时间
         2017-03-27
             使用multi-threads多线程处理
+        2017-03-28
+            添加pool列表pid有效判断
+            去掉多余self
+            部分方法修改成静态方法
+            添加网卡ip提示
         未解决：
             使用psutil模块代替ps,ss收集信息。
             使用日志模块记录日志
