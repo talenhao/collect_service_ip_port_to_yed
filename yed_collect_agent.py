@@ -451,8 +451,8 @@ def do_collect(project_name, instance, pattern_string, local_ip_list):
 @help_check
 def main():
 
-    # thread_num = multiprocessing.cpu_count()/6
-    thread_num = multiprocessing.cpu_count()
+    thread_num = multiprocessing.cpu_count()/6
+    # thread_num = multiprocessing.cpu_count()
     clogger.info("There have %s Threads", thread_num)
     app_listen_instance = AppListen()
     pattern_string = app_listen_instance.config_file_parser(sys.argv[2])
