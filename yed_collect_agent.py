@@ -146,7 +146,7 @@ class AppListen(AppOp):
         ps_aux_cmd = 'ps aux'
         ps_aux_result = subprocess.Popen(shlex.split(ps_aux_cmd), stdout=subprocess.PIPE)
         ps_aux_result_text = ps_aux_result.communicate()[0]  # .decode('utf-8')
-        clogger.debug(ps_aux_result_text)
+        # clogger.debug(ps_aux_result_text)
         # 2.pattern&compile
         ps_aux_pattern_string = pattern_string.format(projectname=project)
         clogger.debug(ps_aux_pattern_string)
@@ -216,7 +216,7 @@ class AppListen(AppOp):
         ss_cmd = 'ss -l -n -p -t'
         ss_cmd_result = subprocess.Popen(shlex.split(ss_cmd), stdout=subprocess.PIPE)
         ss_cmd_result_text = ss_cmd_result.communicate()[0]  # .decode('utf-8')
-        clogger.debug(ss_cmd_result_text)
+        # clogger.debug(ss_cmd_result_text)
         logfile("ss_lnpt", project, ss_cmd_result_text)
         # 2.pattern&compile
         # 修复359会匹配23592造成数据错误问题
@@ -270,7 +270,7 @@ class AppListen(AppOp):
         clogger.info("Begin to execute ss connection command: %s", ss_ntp_cmd)
         ss_ntp_cmd_result = subprocess.Popen(shlex.split(ss_ntp_cmd), stdout=subprocess.PIPE)
         ss_ntp_cmd_result_text = ss_ntp_cmd_result.communicate()[0]  # .decode('utf-8')
-        clogger.debug(ss_ntp_cmd_result_text)
+        # clogger.debug(ss_ntp_cmd_result_text)
         logfile("ss_ntp", project, ss_ntp_cmd_result_text)
         # 2.pattern&compile
         ss_ntp_cmd_pattern_pid = '|'.join(",{0},".format(n) for n in pid_list)
