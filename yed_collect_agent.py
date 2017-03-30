@@ -279,9 +279,10 @@ class AppListen(AppOp):
         # 3.match object
         for ss_ntp_cmd_result_line in ss_ntp_cmd_result_text.splitlines():
             ss_ntp_cmd_re_findpid = ss_ntp_cmd_compile.findall(ss_ntp_cmd_result_line)
-            clogger.info("当前连接池匹配行：%s", ss_ntp_cmd_result_line)
-            clogger.info("当前pid匹配结果：%s", ss_ntp_cmd_re_findpid)
+            clogger.debug(ss_ntp_cmd_re_findpid)
             if ss_ntp_cmd_re_findpid:
+                clogger.info("当前连接池匹配行：%s", ss_ntp_cmd_result_line)
+                clogger.info("当前pid匹配结果：%s", ss_ntp_cmd_re_findpid)
                 # 判断pid是否有效
                 found_pid = int(ss_ntp_cmd_re_findpid[0].split(',')[1])
                 clogger.info("检查连接池传入的PID. Import pid is %s", found_pid)
