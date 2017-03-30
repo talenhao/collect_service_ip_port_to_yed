@@ -153,9 +153,9 @@ class AppListen(AppOp):
         ps_aux_compile = re.compile(ps_aux_pattern_string)
         # 3.match object
         for ps_aux_result_line in ps_aux_result_text.splitlines():
-            clogger.debug(ps_aux_result_line)
+            # clogger.debug(ps_aux_result_line)
             ps_aux_re_find = ps_aux_compile.findall(ps_aux_result_line)
-            clogger.debug(ps_aux_re_find)
+            # clogger.debug(ps_aux_re_find)
             if ps_aux_re_find:
                 logfile('ps_aux', project, ps_aux_result_text)
                 clogger.info("Pattern is %s", ps_aux_pattern_string)
@@ -225,9 +225,9 @@ class AppListen(AppOp):
         ss_cmd_compile = re.compile(ss_cmd_pattern_pid)
         # 3.match object
         for ss_cmd_result_line in ss_cmd_result_text.splitlines():
-            clogger.debug(ss_cmd_result_line)
+            # clogger.debug(ss_cmd_result_line)
             ss_cmd_re_findpid = ss_cmd_compile.findall(ss_cmd_result_line)
-            clogger.debug(ss_cmd_re_findpid)
+            # clogger.debug(ss_cmd_re_findpid)
             if ss_cmd_re_findpid:
                 found_pid = int(ss_cmd_re_findpid[0].split(',')[1])
                 clogger.info("ss_cmd_re_findpid is %s ", found_pid)
@@ -279,7 +279,7 @@ class AppListen(AppOp):
         # 3.match object
         for ss_ntp_cmd_result_line in ss_ntp_cmd_result_text.splitlines():
             ss_ntp_cmd_re_findpid = ss_ntp_cmd_compile.findall(ss_ntp_cmd_result_line)
-            clogger.debug(ss_ntp_cmd_re_findpid)
+            # clogger.debug(ss_ntp_cmd_re_findpid)
             if ss_ntp_cmd_re_findpid:
                 clogger.info("当前连接池匹配行：%s", ss_ntp_cmd_result_line)
                 clogger.info("当前pid匹配结果：%s", ss_ntp_cmd_re_findpid)
