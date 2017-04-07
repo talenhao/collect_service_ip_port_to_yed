@@ -7,12 +7,6 @@ Collect socket information.
 Copyright (C) 2017-2018 Talen Hao. All Rights Reserved.
 """
 
-__author__ = "Talen Hao(天飞)<talenhao@gmail.com>"
-__status__ = "develop"
-__version__ = "3.1"
-__create_date__ = "2017/02/20"
-__last_date__ = "2017/03/29"
-
 
 from Application_operation import applicationOperation as AppOp
 import collect_common
@@ -33,8 +27,11 @@ import multiprocessing.dummy
 # import threading
 # from Queue import Queue
 # from itertools import repeat
-
-version = "2017-03-28"
+__author__ = "Talen Hao(天飞)<talenhao@gmail.com>"
+__status__ = "develop"
+__version__ = "3.1"
+__create_date__ = "2017/02/20"
+__last_date__ = "2017/03/29"
 LogPath = '/tmp/collect2yed.log.%s' % datetime.datetime.now().strftime('%Y-%m-%d,%H.%M.%S')
 clogger = collect_log.GetLogger(LogPath, __name__, logging.DEBUG).get_l()
 
@@ -56,7 +53,7 @@ def help_check(func):
             option = sys.argv[1][1:]
             # fetch the first option without '-'.
             if option == '-version':
-                print('Version %s' % version)
+                print('Version %s' % __version__)
             elif option == '-help':
                 print('''
                    This program prints collect information to mysql.
