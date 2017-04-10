@@ -15,6 +15,7 @@ import logging
 import subprocess
 import shlex
 import sys
+import getopt
 # import os
 import re
 import netifaces
@@ -29,59 +30,77 @@ import multiprocessing.dummy
 # from itertools import repeat
 __author__ = "Talen Hao(天飞)<talenhao@gmail.com>"
 __status__ = "develop"
-__version__ = "3.1"
+__version__ = "3.2"
 __create_date__ = "2017/02/20"
 __last_date__ = "2017/03/29"
 LogPath = '/tmp/collect2yed.log.%s' % datetime.datetime.now().strftime('%Y-%m-%d,%H.%M.%S')
 clogger = collect_log.GetLogger(LogPath, __name__, logging.DEBUG).get_l()
+all_args = sys.argv[1:]
+usage = '''
+用法：
+%s [--命令选项] [参数]
+
+命令选项：
+    --help, -h              帮助。
+    --version, -V           输出版本号。
+    --config, -c <文件>      使用指定而非默认的配置文件。
+    --project, -p <字符串>   用户自定义的项目收集。
+''' % sys.argv[0]
 
 
 # 提示，帮助等装饰器。
 def help_check(func):
-    def wrapper(*args, **kwargs):
-        run_data_time = time.time()
-        clogger.info("Current datetime is : %s", datetime.datetime.fromtimestamp(run_data_time))
+    def _wrapper(*args, **kwargs):
+        # run_data_time = time.time()
+        # clogger.info("Current datetime is : %s", datetime.datetime.fromtimestamp(run_data_time))
         if sys.version_info < (2, 7):
             # raise RuntimeError('At least Python 3.4 is required')
             clogger.warning('友情提示：当前系统版本低于2.7，建议升级python版本。')
-            
-        if len(sys.argv) < 2:
-            clogger.error('没有匹配规则配置文件')
-            sys.exit()
-            
-        if sys.argv[1].startswith('-'):
-            option = sys.argv[1][1:]
-            # fetch the first option without '-'.
-            if option == '-version':
-                print('Version %s' % __version__)
-            elif option == '-help':
-                print('''
-                   This program prints collect information to mysql.
-                   Please specified a re file to pattern.
-                   Options:
-                   --version : Prints the version number
-                   --help    : Display this help
-                   -c file   : Config file.
-                ''')
-            elif option == 'c' and sys.argv[2]:
-                clogger.info("Config file is %s", sys.argv[2])
-                return func(*args, **kwargs)
-            else:
-                clogger.error('Unknown option.')
-                sys.exit()
-        else:
-            clogger.warning("No Config file.")
-            sys.exit()
-    return wrapper
+        clogger.info("当前脚本版本信息：%s", __version__)
+        return func(*args, **kwargs)
+    return _wrapper
+
 
 def spend_time(func):
     def warpper(*args, **kwargs):
         start_time = datetime.datetime.now()
-        clogger.info("Time start %s", start_time)
+        clogger.debug("Time start %s", start_time)
         func(*args, **kwargs)
         end_time = datetime.datetime.now()
-        clogger.info("Time over %s,spend %s", end_time, end_time - start_time)
+        clogger.debug("Time over %s,spend %s", end_time, end_time - start_time)
     return warpper
+
+
+def get_options():
+    if all_args:
+        clogger.debug("命令行参数是 %s", str(all_args))
+    else:
+        clogger.error(usage)
+        sys.exit()
+    config_file = ''
+    only_run_project = ''
+    try:
+        opts, args = getopt.getopt(all_args, "hc:p:V", ["help", "config=", "project=", "version"])
+    except getopt.GetoptError:
+        clogger.error(usage)
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt in ('-h', "--help"):
+            clogger.info(usage)
+            sys.exit()
+        elif opt in ("-V", "--version"):
+            print('Current version is %0.2f' % float(__version__))
+            clogger.debug('Version %s', __version__)
+            sys.exit()
+        elif opt in ("-c", "--config"):
+            clogger.info("Config file is %s", arg)
+            config_file = arg
+        elif opt in ("-p", "--project"):
+            clogger.info("收集的项目是 %s", arg)
+            only_run_project = arg
+    clogger.debug("配置文件是%s， 单独运行 %s", config_file, only_run_project)
+    return (config_file, only_run_project)
+
 
 def logfile(cmd_id, project, cmd_context):
     filename = '/tmp/collect_service_ip_port_to_yed-%s-%s-%s' % (cmd_id, project, datetime.datetime.now())
@@ -229,7 +248,7 @@ class AppListen(AppOp):
                 found_pid = int(ss_cmd_re_findpid[0].split(',')[1])
                 clogger.info("ss_cmd_re_findpid is %s ", found_pid)
                 pid_create_time = psutil.Process(pid=found_pid).create_time()
-                clogger.debug(pid_create_time)
+                clogger.debug("pid_create_time is %s.", str(pid_create_time))
                 if pid_create_time > run_date_time:
                     clogger.info("%s 的进程%s已经被其它程序使用，数据失效，丢弃...", project, found_pid)
                     continue
@@ -321,8 +340,8 @@ class AppListen(AppOp):
                 project_column,
                 ','.join(message)
             )
-            clogger.debug(sql_cmd)
-            self.resultCursor.execute(sql_cmd)
+            clogger.debug("%s导入数据库操作： %s", project_name, sql_cmd)
+            clogger.debug("%s数据库执行结果%s", project_name, self.resultCursor.execute(sql_cmd))
             self.DBcon.commit()
         else:
             clogger.debug("%s is not have socket.", project_name)
@@ -379,6 +398,11 @@ def do_collect(project_name, instance, pattern_string, local_ip_list):
                     clogger.debug(listen_info)
                     to_db_ip_port_project.append(listen_info)
             clogger.debug("%s listen information ok", project_name)
+            instance.import2db(listen_table,
+                               listen_ipport_column,
+                               project_column,
+                               to_db_ip_port_project,
+                               project_name)
             # 生成连接池表
             collect_con_ip_port_list = instance.connect_pool(project_name, from_db_ports, from_db_pid_list)
             clogger.debug(collect_con_ip_port_list)
@@ -389,17 +413,12 @@ def do_collect(project_name, instance, pattern_string, local_ip_list):
                 con_info = "('" + con + "','" + project_name + "')"
                 clogger.debug(con_info)
                 to_db_con_ip_port_project.append(con_info)
+            instance.import2db(connectpooltable,
+                               connectpool_ipport_column,
+                               project_column,
+                               to_db_con_ip_port_project,
+                               project_name)
             instance.end_line(project_name)
-    instance.import2db(listen_table,
-                       listen_ipport_column,
-                       project_column,
-                       to_db_ip_port_project,
-                       project_name)
-    instance.import2db(connectpooltable,
-                       connectpool_ipport_column,
-                       project_column,
-                       to_db_con_ip_port_project,
-                       project_name)
 
 # 老式方法，放弃
 # def _collect_worker():
@@ -448,17 +467,31 @@ def do_collect(project_name, instance, pattern_string, local_ip_list):
 @spend_time
 @help_check
 def main():
-
-    thread_num = multiprocessing.cpu_count()/6
-    # thread_num = multiprocessing.cpu_count()
-    clogger.info("There have %s Threads", thread_num)
-    app_listen_instance = AppListen()
-    pattern_string = app_listen_instance.config_file_parser(sys.argv[2])
+    """
+    解析命令行参数
+    :param config_file, single_project: 
+    :return: 
+    """
+    config_file, project = get_options()
+    clogger.debug("main: config_file is %s.", config_file)
+    clogger.debug("main: project is %s.", project)
+    if config_file:
+        thread_num = multiprocessing.cpu_count()/6
+        # thread_num = multiprocessing.cpu_count()/6
+        clogger.info("There have %s Threads", thread_num)
+        app_listen_instance = AppListen()
+    else:
+        clogger.info(usage)
+        exit()
+    if project:
+        app_listen_con_db_project_list = [project]
+    else:
+        app_listen_con_db_project_list = app_listen_instance.project_list()
+    clogger.debug("app_listen_con_db_project_list ___ %s", app_listen_con_db_project_list)
+    pattern_string = app_listen_instance.config_file_parser(config_file)
     clogger.debug(pattern_string)
     local_ip_list = app_listen_instance.get_localhost_ip_list()
     clogger.debug(local_ip_list)
-    app_listen_con_db_project_list = app_listen_instance.project_list()
-    clogger.debug(app_listen_con_db_project_list)
     # Make the Pool of workers
     pool = multiprocessing.dummy.Pool(processes=thread_num)
     # Process collect project in their own threads
