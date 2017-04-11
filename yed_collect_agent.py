@@ -36,6 +36,7 @@ __last_date__ = "2017/03/29"
 LogPath = '/tmp/collect2yed.log.%s' % datetime.datetime.now().strftime('%Y-%m-%d,%H.%M.%S')
 clogger = collect_log.GetLogger(LogPath, __name__, logging.DEBUG).get_l()
 all_args = sys.argv[1:]
+ss_bin = '/var/local/iproute2-4.10.0/misc/ss'
 usage = '''
 用法：
 %s [--命令选项] [参数]
@@ -229,7 +230,7 @@ class AppListen(AppOp):
         port_list = []
         # 1.内容
         # ss_cmd = "ss -lntp -4 |grep %s |awk -F: '{print $2}'|awk '{print $1}'" % ipid
-        ss_cmd = 'ss -l -n -p -t'
+        ss_cmd = '%s -l -n -p -t' % ss_bin
         ss_cmd_result = subprocess.Popen(shlex.split(ss_cmd), stdout=subprocess.PIPE)
         ss_cmd_result_text = ss_cmd_result.communicate()[0]  # .decode('utf-8')
         # clogger.debug(ss_cmd_result_text)
@@ -282,7 +283,7 @@ class AppListen(AppOp):
         # 1.内容
         # ss_cmd = ss -ntp -o state established \'( sport != :%s )\'|grep -E %s|\
         # awk \'{print $4}\'|awk -F \':\' \'{print $(NF-1)\":\" $NF}\'' % (self.port,self.pid)
-        ss_ntp_cmd = 'ss -ntp -o state established \\( %s \\)' % s_port_join
+        ss_ntp_cmd = '%s -ntp -o state established \\( %s \\)' % (ss_bin, s_port_join)
         clogger.info("Begin to execute ss connection command: %s", ss_ntp_cmd)
         ss_ntp_cmd_result = subprocess.Popen(shlex.split(ss_ntp_cmd), stdout=subprocess.PIPE)
         ss_ntp_cmd_result_text = ss_ntp_cmd_result.communicate()[0]  # .decode('utf-8')
