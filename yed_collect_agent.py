@@ -238,16 +238,17 @@ class AppListen(AppOp):
         logfile("ss_lnpt", project, ss_cmd_result_text)
         # 2.pattern&compile
         # 修复359会匹配23592造成数据错误问题
-        ss_cmd_pattern_pid = '|'.join("pid={0},".format(n) for n in pid_list)
-        clogger.info("pattern is :%s", ss_cmd_pattern_pid)
+        ss_cmd_pattern_pid = '|'.join(",pid={0},".format(n) for n in pid_list)
+        clogger.info("pattern is: %s", ss_cmd_pattern_pid)
         ss_cmd_compile = re.compile(ss_cmd_pattern_pid)
+        clogger.debug("ss_cmd_compile: %s", ss_cmd_compile)
         # 3.match object
         for ss_cmd_result_line in ss_cmd_result_text.splitlines():
-            # clogger.debug(ss_cmd_result_line)
+            clogger.debug(ss_cmd_result_line)
             ss_cmd_re_findpid = ss_cmd_compile.findall(ss_cmd_result_line)
-            # clogger.debug(ss_cmd_re_findpid)
+            clogger.debug(ss_cmd_re_findpid)
             if ss_cmd_re_findpid:
-                found_pid = int(ss_cmd_re_findpid[0].split(',')[1])
+                found_pid = int(ss_cmd_re_findpid[0].split(',')[1].split('=')[1])
                 clogger.info("ss_cmd_re_findpid is %s ", found_pid)
                 pid_create_time = psutil.Process(pid=found_pid).create_time()
                 clogger.debug("pid_create_time is %s.", str(pid_create_time))
@@ -295,7 +296,7 @@ class AppListen(AppOp):
         # old2009: LISTEN     0      1024   *:14027 *:* users:(("nutcracker",47573,44))
         # new2017: LISTEN     0      1024   *:14027 *:* users:(("nutcracker",pid=47573,fd=44))
         # ss_ntp_cmd_pattern_pid = '|'.join(",{0},".format(n) for n in pid_list)
-        ss_ntp_cmd_pattern_pid = '|'.join("pid={0},".format(n) for n in pid_list)
+        ss_ntp_cmd_pattern_pid = '|'.join(",pid={0},".format(n) for n in pid_list)
         clogger.debug(ss_ntp_cmd_pattern_pid)
         ss_ntp_cmd_compile = re.compile(ss_ntp_cmd_pattern_pid)
         # 3.match object
@@ -306,7 +307,7 @@ class AppListen(AppOp):
                 clogger.info("当前连接池匹配行：%s", ss_ntp_cmd_result_line)
                 clogger.info("当前pid匹配结果：%s", ss_ntp_cmd_re_findpid)
                 # 判断pid是否有效
-                found_pid = int(ss_ntp_cmd_re_findpid[0].split(',')[1])
+                found_pid = int(ss_ntp_cmd_re_findpid[0].split(',')[1].split('=')[1])
                 clogger.info("检查连接池传入的PID. Import pid is %s", found_pid)
                 pid_create_time = psutil.Process(pid=found_pid).create_time()
                 clogger.debug(pid_create_time)
