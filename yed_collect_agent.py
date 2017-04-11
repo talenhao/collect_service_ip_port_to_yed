@@ -146,7 +146,7 @@ class AppListen(AppOp):
         for row in self.resultCursor.fetchall():
             clogger.debug("Fetch project name from database : %s", row)
             projects_name_list.append(row[0])
-        clogger.info(projects_name_list)
+        clogger.debug(projects_name_list)
         return projects_name_list
 
     @staticmethod
@@ -166,7 +166,7 @@ class AppListen(AppOp):
         # clogger.debug(ps_aux_result_text)
         # 2.pattern&compile
         ps_aux_pattern_string = pattern_string.format(projectname=project)
-        clogger.debug(ps_aux_pattern_string)
+        clogger.debug("%s> %s", project, ps_aux_pattern_string)
         ps_aux_compile = re.compile(ps_aux_pattern_string)
         # 3.match object
         for ps_aux_result_line in ps_aux_result_text.splitlines():
@@ -175,21 +175,21 @@ class AppListen(AppOp):
             # clogger.debug(ps_aux_re_find)
             if ps_aux_re_find:
                 logfile('ps_aux', project, ps_aux_result_text)
-                clogger.info("Pattern is %s", ps_aux_pattern_string)
-                clogger.info("Get： %s ", ps_aux_re_find)
+                clogger.debug("%s> Pattern is %s", project, ps_aux_pattern_string)
+                clogger.info("%s> Get： %s ", project, ps_aux_re_find)
                 pid = int(ps_aux_result_line.split()[1])
-                clogger.debug(pid)
-                clogger.info('%s has a pid number %s ...', project, pid)
+                clogger.debug("%s> %s",project, pid)
+                clogger.info('%s> has a pid number %s ...', project, pid)
                 pid_lists.append(pid)
         # except subprocess.CalledProcessError:
         # pid一般不会重复
         # pid_lists = collect_common.unique_list(pid_lists)
         if pid_lists:
-            clogger.info("project %s pid：%s", project, pid_lists)
+            clogger.info("%s> pid：%s", project, pid_lists)
         else:
             time.sleep(1)
-            clogger.info('%s is not in this host!', project)
-        clogger.debug(pid_lists)
+            clogger.info('%s> is not in this host!', project)
+        clogger.debug("%s> %s", project, pid_lists)
         return pid_lists
 
     @staticmethod
@@ -205,9 +205,9 @@ class AppListen(AppOp):
                 card_ip_address = netifaces.ifaddresses(interface_card)[netifaces.AF_INET][0]['addr']
                 clogger.debug(card_ip_address)
             except KeyError:
-                clogger.info("%s is not have ip", interface_card)
+                clogger.debug("%s is not have ip", interface_card)
             else:
-                clogger.info("%s is have ip %s", interface_card, card_ip_address)
+                clogger.debug("%s is have ip %s", interface_card, card_ip_address)
                 card_ip_list.append(card_ip_address)
         # 如果服务监听端口无重复可以打开
         # card_ip_list_all = card_ip_list.remove('127.0.0.1')
@@ -225,13 +225,13 @@ class AppListen(AppOp):
         # the PID number is attached to the new process, then will drop this PID number.
         run_date_time = time.time()
         if not pid_list:
-            clogger.debug("%s is None, so return None", pid_list)
+            clogger.debug("%s> %s is None, so return None", project, pid_list)
             return None
         port_list = []
         # 1.内容
         # ss_cmd = "ss -lntp -4 |grep %s |awk -F: '{print $2}'|awk '{print $1}'" % ipid
         ss_cmd = '%s -l -n -p -t' % ss_bin
-        clogger.debug(ss_cmd)
+        clogger.debug("%s> %s", project, ss_cmd)
         ss_cmd_result = subprocess.Popen(shlex.split(ss_cmd), stdout=subprocess.PIPE)
         ss_cmd_result_text = ss_cmd_result.communicate()[0]  # .decode('utf-8')
         # clogger.debug(ss_cmd_result_text)
@@ -239,32 +239,32 @@ class AppListen(AppOp):
         # 2.pattern&compile
         # 修复359会匹配23592造成数据错误问题
         ss_cmd_pattern_pid = '|'.join(",pid={0},".format(n) for n in pid_list)
-        clogger.info("pattern is: %s", ss_cmd_pattern_pid)
+        clogger.info("%s> pattern is: %s", project, ss_cmd_pattern_pid)
         ss_cmd_compile = re.compile(ss_cmd_pattern_pid)
-        clogger.debug("ss_cmd_compile: %s", ss_cmd_compile)
+        clogger.debug("%s> ss_cmd_compile: %s", project, ss_cmd_compile)
         # 3.match object
         for ss_cmd_result_line in ss_cmd_result_text.splitlines():
-            clogger.debug(ss_cmd_result_line)
+            clogger.debug("%s> %s", project, ss_cmd_result_line)
             ss_cmd_re_findpid = ss_cmd_compile.findall(ss_cmd_result_line)
-            clogger.debug(ss_cmd_re_findpid)
+            clogger.debug("%s> %s", project, ss_cmd_re_findpid)
             if ss_cmd_re_findpid:
                 found_pid = int(ss_cmd_re_findpid[0].split(',')[1].split('=')[1])
-                clogger.info("ss_cmd_re_findpid is %s ", found_pid)
+                clogger.info("%s> ss_cmd_re_findpid is %s ", project, found_pid)
                 pid_create_time = psutil.Process(pid=found_pid).create_time()
-                clogger.debug("pid_create_time is %s.", str(pid_create_time))
+                clogger.debug("%s> pid_create_time is %s.", project, str(pid_create_time))
                 if pid_create_time > run_date_time:
-                    clogger.info("%s 的进程%s已经被其它程序使用，数据失效，丢弃...", project, found_pid)
+                    clogger.info("%s> 的进程%s已经被其它程序使用，数据失效，丢弃...", project, found_pid)
                     continue
                 else:
-                    clogger.info("%s 的进程%s数据有效，正在查找监听...", project, found_pid)
+                    clogger.info("%s> 的进程%s数据有效，正在查找监听...", project, found_pid)
                     listen_port = ss_cmd_result_line.split()[3].split(':')[-1].strip()
-                    clogger.info("找到监听端口：%s", listen_port)
+                    clogger.info("%s> 找到监听端口：%s", project, listen_port)
                     port_list.append(listen_port)
         # 监听端口去重
-        clogger.debug("ununiq list %s", port_list)
+        clogger.debug("%s> ununiq list %s", project, port_list)
         port_list = collect_common.unique_list(port_list)
-        clogger.debug("uniq list %s", port_list)
-        clogger.info("监听端口接收到的监听列表%s", port_list)
+        clogger.debug("%s> uniq list %s", project, port_list)
+        clogger.info("%s> 监听端口接收到的监听列表%s", project, port_list)
         return port_list
     
     @staticmethod
@@ -277,16 +277,16 @@ class AppListen(AppOp):
         """
         run_date_time = time.time()
         pool_list = []
-        clogger.info("处理连接池，接收参数端口：%s，进程号：%s", ports, pid_list)
+        clogger.info("%s> 处理连接池，接收参数端口：%s，进程号：%s", project, ports, pid_list)
         s_port_line = ["sport neq :%s" % n for n in ports]
-        clogger.debug(s_port_line)
+        clogger.debug("%s> %s", project, s_port_line)
         s_port_join = ' and '.join(s_port_line)
-        clogger.debug(s_port_join)
+        clogger.debug("%s> %s", project, s_port_join)
         # 1.内容
         # ss_cmd = ss -ntp -o state established \'( sport != :%s )\'|grep -E %s|\
         # awk \'{print $4}\'|awk -F \':\' \'{print $(NF-1)\":\" $NF}\'' % (self.port,self.pid)
         ss_ntp_cmd = '%s -ntp -o state established \\( %s \\)' % (ss_bin, s_port_join)
-        clogger.info("Begin to execute ss connection command: %s", ss_ntp_cmd)
+        clogger.info("%s> Begin to execute ss connection command: %s", project, ss_ntp_cmd)
         ss_ntp_cmd_result = subprocess.Popen(shlex.split(ss_ntp_cmd), stdout=subprocess.PIPE)
         ss_ntp_cmd_result_text = ss_ntp_cmd_result.communicate()[0]  # .decode('utf-8')
         # clogger.debug(ss_ntp_cmd_result_text)
@@ -297,37 +297,37 @@ class AppListen(AppOp):
         # new2017: LISTEN     0      1024   *:14027 *:* users:(("nutcracker",pid=47573,fd=44))
         # ss_ntp_cmd_pattern_pid = '|'.join(",{0},".format(n) for n in pid_list)
         ss_ntp_cmd_pattern_pid = '|'.join(",pid={0},".format(n) for n in pid_list)
-        clogger.debug(ss_ntp_cmd_pattern_pid)
+        clogger.debug("%s> %s", project, ss_ntp_cmd_pattern_pid)
         ss_ntp_cmd_compile = re.compile(ss_ntp_cmd_pattern_pid)
         # 3.match object
         for ss_ntp_cmd_result_line in ss_ntp_cmd_result_text.splitlines():
             ss_ntp_cmd_re_findpid = ss_ntp_cmd_compile.findall(ss_ntp_cmd_result_line)
             # clogger.debug(ss_ntp_cmd_re_findpid)
             if ss_ntp_cmd_re_findpid:
-                clogger.info("当前连接池匹配行：%s", ss_ntp_cmd_result_line)
-                clogger.info("当前pid匹配结果：%s", ss_ntp_cmd_re_findpid)
+                clogger.info("%s> 当前连接池匹配行：%s", project, ss_ntp_cmd_result_line)
+                clogger.info("%s> 当前pid匹配结果：%s", project, ss_ntp_cmd_re_findpid)
                 # 判断pid是否有效
                 found_pid = int(ss_ntp_cmd_re_findpid[0].split(',')[1].split('=')[1])
-                clogger.info("检查连接池传入的PID. Import pid is %s", found_pid)
+                clogger.info("%s> 检查连接池传入的PID. Import pid is %s", project, found_pid)
                 pid_create_time = psutil.Process(pid=found_pid).create_time()
-                clogger.debug(pid_create_time)
+                clogger.debug("%s> %s", project, pid_create_time)
                 if pid_create_time > run_date_time:
-                    clogger.info("%s 的进程%s已经被其它程序使用，数据失效，丢弃...", project, found_pid)
+                    clogger.info("%s> 的进程%s已经被其它程序使用，数据失效，丢弃...", project, found_pid)
                 else:
-                    clogger.info("%s 的进程%s数据有效，放入pattern列表...", project, found_pid)
-                    clogger.info("找到有效PID：%s" % found_pid)
+                    clogger.info("%s> 的进程%s数据有效，放入pattern列表...", project, found_pid)
+                    clogger.info("%s> 找到有效PID：%s" % project, found_pid)
                     connect_ip_port_list = ss_ntp_cmd_result_line.split()[3].split(':')[-2:]
-                    clogger.debug("过滤出的连接池IP：port %s", connect_ip_port_list)
+                    clogger.debug("%s> 过滤出的连接池IP：port %s", project, connect_ip_port_list)
                     ip_port_message = ':'.join(connect_ip_port_list)
-                    clogger.debug(ip_port_message)
+                    clogger.debug("%s> %s", project, ip_port_message)
                     pool_list.append(ip_port_message)
             else:
-                clogger.debug("project %s ss_ntp_cmd_re_findpid is none.", project)
+                clogger.debug("%s> ss_ntp_cmd_re_findpid is none.", project)
         # 连接池列表去重
-        clogger.debug("ununiq list %s", pool_list)
+        clogger.debug("%s> ununiq list %s", project, pool_list)
         pool_list = collect_common.unique_list(pool_list)
-        clogger.debug("uniq list %s", pool_list)
-        clogger.info("处理连接池，列表：%s", pool_list)
+        clogger.debug("%s> uniq list %s", project, pool_list)
+        clogger.info("%s> 处理连接池，列表：%s", project, pool_list)
         return pool_list
 
     def import2db(self, table, ip_port_column, project_column, message, project_name):
@@ -339,7 +339,7 @@ class AppListen(AppOp):
         :param message:
         :return:
         """
-        clogger.debug(message)
+        clogger.debug("%s> %s", project_name, message)
         if len(message) > 0:
             sql_cmd = "INSERT ignore INTO %s (%s,%s) VALUES %s" % (
                 table,
@@ -347,11 +347,11 @@ class AppListen(AppOp):
                 project_column,
                 ','.join(message)
             )
-            clogger.debug("%s导入数据库操作： %s", project_name, sql_cmd)
-            clogger.debug("%s数据库执行结果%s", project_name, self.resultCursor.execute(sql_cmd))
+            clogger.debug("%s> 导入数据库操作： %s", project_name, sql_cmd)
+            clogger.debug("%s> 数据库执行结果%s", project_name, self.resultCursor.execute(sql_cmd))
             self.DBcon.commit()
         else:
-            clogger.debug("%s is not have socket.", project_name)
+            clogger.debug("%s> is not have socket.", project_name)
             pass
 
     @staticmethod
@@ -365,8 +365,8 @@ class AppListen(AppOp):
 
 def do_collect(project_name, instance, pattern_string, local_ip_list):
     # 导入数据库的两个列表
-    clogger.debug("当前执行：%s, %s", project_name, pattern_string)
-    clogger.info("当前执行：%s", project_name)
+    clogger.debug("当前执行：%s> , %s", project_name, pattern_string)
+    clogger.info("当前执行：%s> ", project_name)
     to_db_ip_port_project = []
     to_db_con_ip_port_project = []
     # 初始变量
@@ -381,30 +381,30 @@ def do_collect(project_name, instance, pattern_string, local_ip_list):
     instance.start_line(project_name)
     # pid list
     from_db_pid_list = instance.collect_pid_list(project_name, pattern_string)
-    clogger.debug(from_db_pid_list)
+    clogger.debug("%s> %s", project_name, from_db_pid_list)
     if not from_db_pid_list:
-        clogger.debug("Have no project %s", project_name)
+        clogger.debug("%s> Have no project %s", project_name, project_name)
         instance.end_line(project_name)
     else:
         # port list
         from_db_ports = instance.listen_ports(project_name, from_db_pid_list)
-        clogger.debug(from_db_ports)
+        clogger.debug("%s> %s", project_name, from_db_ports)
         if not from_db_ports:
-            clogger.info("Have no project listen ports %s", project_name)
+            clogger.info("%s> Have no project listen ports %s", project_name, project_name)
             instance.end_line(project_name)
         else:
             # 生成监听信息
             for port in from_db_ports:
-                clogger.debug(port)
+                clogger.debug("%s> %s", project_name, port)
                 # 导入监听表
                 # 监听信息需要提前合成
                 for ip in local_ip_list:
                     ip_port = str(ip) + ':' + str(port)
-                    clogger.debug(ip_port)
+                    clogger.debug("%s> %s", project_name, ip_port)
                     listen_info = "('" + ip_port + "','" + project_name + "')"
-                    clogger.debug(listen_info)
+                    clogger.debug("%s> %s", project_name, listen_info)
                     to_db_ip_port_project.append(listen_info)
-            clogger.debug("%s listen information ok", project_name)
+            clogger.debug("%s> listen information ok", project_name)
             instance.import2db(listen_table,
                                listen_ipport_column,
                                project_column,
@@ -412,13 +412,13 @@ def do_collect(project_name, instance, pattern_string, local_ip_list):
                                project_name)
             # 生成连接池表
             collect_con_ip_port_list = instance.connect_pool(project_name, from_db_ports, from_db_pid_list)
-            clogger.debug(collect_con_ip_port_list)
+            clogger.debug("%s> %s", project_name, collect_con_ip_port_list)
             # 生成连接池信息
             for con in collect_con_ip_port_list:
                 # ','.join(map(lambda x: "('" + x[0] + "'," + str(int(x[1])) + ')', listen_group_id_project_name))
-                clogger.debug(con)
+                clogger.debug("%s> %s", project_name, con)
                 con_info = "('" + con + "','" + project_name + "')"
-                clogger.debug(con_info)
+                clogger.debug("%s> %s", project_name, con_info)
                 to_db_con_ip_port_project.append(con_info)
             instance.import2db(connectpooltable,
                                connectpool_ipport_column,
