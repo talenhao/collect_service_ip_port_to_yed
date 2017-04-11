@@ -231,13 +231,14 @@ class AppListen(AppOp):
         # 1.内容
         # ss_cmd = "ss -lntp -4 |grep %s |awk -F: '{print $2}'|awk '{print $1}'" % ipid
         ss_cmd = '%s -l -n -p -t' % ss_bin
+        clogger.debug(ss_cmd)
         ss_cmd_result = subprocess.Popen(shlex.split(ss_cmd), stdout=subprocess.PIPE)
         ss_cmd_result_text = ss_cmd_result.communicate()[0]  # .decode('utf-8')
         # clogger.debug(ss_cmd_result_text)
         logfile("ss_lnpt", project, ss_cmd_result_text)
         # 2.pattern&compile
         # 修复359会匹配23592造成数据错误问题
-        ss_cmd_pattern_pid = '|'.join(",{0},".format(n) for n in pid_list)
+        ss_cmd_pattern_pid = '|'.join("pid={0},".format(n) for n in pid_list)
         clogger.info("pattern is :%s", ss_cmd_pattern_pid)
         ss_cmd_compile = re.compile(ss_cmd_pattern_pid)
         # 3.match object
@@ -290,7 +291,11 @@ class AppListen(AppOp):
         # clogger.debug(ss_ntp_cmd_result_text)
         logfile("ss_ntp", project, ss_ntp_cmd_result_text)
         # 2.pattern&compile
-        ss_ntp_cmd_pattern_pid = '|'.join(",{0},".format(n) for n in pid_list)
+        # 2017版本的ss命令已经使用pid=num的方式，所以要修改成新格式
+        # old2009: LISTEN     0      1024   *:14027 *:* users:(("nutcracker",47573,44))
+        # new2017: LISTEN     0      1024   *:14027 *:* users:(("nutcracker",pid=47573,fd=44))
+        # ss_ntp_cmd_pattern_pid = '|'.join(",{0},".format(n) for n in pid_list)
+        ss_ntp_cmd_pattern_pid = '|'.join("pid={0},".format(n) for n in pid_list)
         clogger.debug(ss_ntp_cmd_pattern_pid)
         ss_ntp_cmd_compile = re.compile(ss_ntp_cmd_pattern_pid)
         # 3.match object
