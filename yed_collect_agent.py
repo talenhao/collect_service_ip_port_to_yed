@@ -25,12 +25,13 @@ import datetime
 import time
 import multiprocessing
 import multiprocessing.dummy
+import uuid
 # import threading
 # from Queue import Queue
 # from itertools import repeat
 __author__ = "Talen Hao(天飞)<talenhao@gmail.com>"
 __status__ = "develop"
-__version__ = "3.2"
+__version__ = "2017.04.12"
 __create_date__ = "2017/02/20"
 __last_date__ = "2017/03/29"
 LogPath = '/tmp/collect2yed.log.%s' % datetime.datetime.now().strftime('%Y-%m-%d,%H.%M.%S')
@@ -47,6 +48,22 @@ usage = '''
     --config, -c <文件>      使用指定而非默认的配置文件。
     --project, -p <字符串>   用户自定义的项目收集。
 ''' % sys.argv[0]
+
+# 初始变量
+global listen_table
+listen_table = "listentable"
+global listen_ipport_column
+listen_ipport_column = 'lipport'
+global connectpooltable
+connectpooltable = "pooltable"
+global connectpool_ipport_column
+connectpool_ipport_column = 'conipport'
+global project_column
+project_column = 'projectname'
+global server_uuid_column
+server_uuid_column = 'server_uuid'
+global server_uuid
+server_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, __author__))
 
 
 # 提示，帮助等装饰器。
@@ -330,21 +347,23 @@ class AppListen(AppOp):
         clogger.info("%s> 处理连接池，列表：%s", project, pool_list)
         return pool_list
 
-    def import2db(self, table, ip_port_column, project_column, message, project_name):
+    def import2db(self, table, ip_port_column, project_column, server_uuid_column, message, project_name):
         """
         :param table:
         :param ip_port_column:
         :param project_column:
         :param project_name:
+        :param server_uuid_column:
         :param message:
         :return:
         """
         clogger.debug("%s> %s", project_name, message)
         if len(message) > 0:
-            sql_cmd = "INSERT ignore INTO %s (%s,%s) VALUES %s" % (
+            sql_cmd = "INSERT ignore INTO %s (%s,%s,%s) VALUES %s" % (
                 table,
                 ip_port_column,
                 project_column,
+                server_uuid_column,
                 ','.join(message)
             )
             clogger.debug("%s> 导入数据库操作： %s", project_name, sql_cmd)
@@ -353,6 +372,28 @@ class AppListen(AppOp):
         else:
             clogger.debug("%s> is not have socket.", project_name)
             pass
+
+    def reset_local_db_info(self, table_name, column_name):
+        """
+        在每台服务器执行全收集的时候，先清除旧的数据库信息;
+        """
+        clogger.debug("重置表%s的字段%s服务器的信息。", table_name, column_name)
+        # sql_like_string = "%s LIKE '{0}:%s'" % (column_name, str('%'))
+        sql_like_string = "%s = '{0}'" % column_name
+        clogger.debug("sql_like_string: %s", sql_like_string)
+        # if '127.0.0.1' in ip_list:
+        #     ip_list.remove('127.0.0.1')
+        # clogger.debug(ip_list)
+        # sql_like_pattern = ' or '.join(sql_like_string.format(ip) for ip in ip_list.remove('127.0.0.1'))
+        # sql_like_pattern = ' or '.join(sql_like_string.format(ip) for ip in ip_list)
+        sql_like_pattern = sql_like_string.format(server_uuid)
+        # clogger.debug("sql_like_pattern: ", sql_like_pattern)
+        # print("sql_like_string is : %r " % sql_like_string)
+        clogger.debug("sql_like_string is : %r ", sql_like_string)
+        sql_cmd = "DELETE FROM %s WHERE %s" % (table_name, sql_like_pattern)
+        clogger.debug("清除数据库操作： %s", sql_cmd)
+        clogger.debug("清除数据库执行结果%s", self.resultCursor.execute(sql_cmd))
+        self.DBcon.commit()
 
     @staticmethod
     def start_line(info):
@@ -369,12 +410,7 @@ def do_collect(project_name, instance, pattern_string, local_ip_list):
     clogger.info("当前执行：%s> ", project_name)
     to_db_ip_port_project = []
     to_db_con_ip_port_project = []
-    # 初始变量
-    listen_table = "listentable"
-    listen_ipport_column = 'lipport'
-    connectpooltable = "pooltable"
-    connectpool_ipport_column = 'conipport'
-    project_column = 'projectname'
+    # 使用几个global变量
     # rows, columns = os.popen('stty size', 'r').read().split()
     # clogger.info("=" * int(columns) + "\n 1.process project : %s \n" % project_name)
     # Split line
@@ -401,13 +437,14 @@ def do_collect(project_name, instance, pattern_string, local_ip_list):
                 for ip in local_ip_list:
                     ip_port = str(ip) + ':' + str(port)
                     clogger.debug("%s> %s", project_name, ip_port)
-                    listen_info = "('" + ip_port + "','" + project_name + "')"
+                    listen_info = "('" + ip_port + "','" + project_name + "','" + server_uuid + "')"
                     clogger.debug("%s> %s", project_name, listen_info)
                     to_db_ip_port_project.append(listen_info)
             clogger.debug("%s> listen information ok", project_name)
             instance.import2db(listen_table,
                                listen_ipport_column,
                                project_column,
+                               server_uuid_column,
                                to_db_ip_port_project,
                                project_name)
             # 生成连接池表
@@ -417,12 +454,13 @@ def do_collect(project_name, instance, pattern_string, local_ip_list):
             for con in collect_con_ip_port_list:
                 # ','.join(map(lambda x: "('" + x[0] + "'," + str(int(x[1])) + ')', listen_group_id_project_name))
                 clogger.debug("%s> %s", project_name, con)
-                con_info = "('" + con + "','" + project_name + "')"
+                con_info = "('" + con + "','" + project_name + "','" + server_uuid + "')"
                 clogger.debug("%s> %s", project_name, con_info)
                 to_db_con_ip_port_project.append(con_info)
             instance.import2db(connectpooltable,
                                connectpool_ipport_column,
                                project_column,
+                               server_uuid_column,
                                to_db_con_ip_port_project,
                                project_name)
             instance.end_line(project_name)
@@ -483,22 +521,31 @@ def main():
     clogger.debug("main: config_file is %s.", config_file)
     clogger.debug("main: project is %s.", project)
     if config_file:
+        # thread_num = 1
         thread_num = multiprocessing.cpu_count()/6
-        # thread_num = multiprocessing.cpu_count()/6
         clogger.info("There have %s Threads", thread_num)
         app_listen_instance = AppListen()
     else:
         clogger.info(usage)
         exit()
+    clogger.debug("获取本机的ip信息")
+    local_ip_list = app_listen_instance.get_localhost_ip_list()
+    clogger.debug(local_ip_list)
+    clogger.debug("如果指定了收集项目，不执行清除数据库个数据操作。")
     if project:
         app_listen_con_db_project_list = [project]
     else:
         app_listen_con_db_project_list = app_listen_instance.project_list()
+        clogger.debug("清除当前执行主机的旧数据")
+        # for t, c in {listen_table: listen_ipport_column, connectpooltable: connectpool_ipport_column}.items():
+            # print(type(t),type(c))
+        #     clogger.debug("%r, %r", t, c)
+        for table_name in [listen_table, connectpooltable]:
+            app_listen_instance.reset_local_db_info(table_name, server_uuid_column)
     clogger.debug("app_listen_con_db_project_list ___ %s", app_listen_con_db_project_list)
     pattern_string = app_listen_instance.config_file_parser(config_file)
     clogger.debug(pattern_string)
-    local_ip_list = app_listen_instance.get_localhost_ip_list()
-    clogger.debug(local_ip_list)
+
     # Make the Pool of workers
     pool = multiprocessing.dummy.Pool(processes=thread_num)
     # Process collect project in their own threads
