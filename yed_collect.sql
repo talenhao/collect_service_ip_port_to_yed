@@ -26,6 +26,7 @@ CREATE TABLE `appgroup` (
   `groupid` tinyint(4) NOT NULL AUTO_INCREMENT,
   `groupname` varchar(20) NOT NULL,
   `parent_group` varchar(20) DEFAULT NULL,
+  `CreateTime` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`groupid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=61 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -41,6 +42,7 @@ CREATE TABLE `application` (
   `project_id` bigint(21) NOT NULL AUTO_INCREMENT,
   `projectname` varchar(50) NOT NULL,
   `group_id` tinyint(4) DEFAULT NULL,
+  `CreateTime` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`project_id`),
   UNIQUE KEY `projectname` (`projectname`)
 ) ENGINE=InnoDB AUTO_INCREMENT=169 DEFAULT CHARSET=utf8;
@@ -108,4 +110,4 @@ CREATE TABLE `pooltable` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-04-13 17:15:31
+-- Dump completed on 2017-04-13 17:19:37
