@@ -43,7 +43,7 @@ CREATE TABLE `application` (
   `group_id` tinyint(4) DEFAULT NULL,
   PRIMARY KEY (`project_id`),
   UNIQUE KEY `projectname` (`projectname`)
-) ENGINE=InnoDB AUTO_INCREMENT=165 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=169 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -56,6 +56,8 @@ DROP TABLE IF EXISTS `listentable`;
 CREATE TABLE `listentable` (
   `lipport` varchar(24) NOT NULL,
   `projectname` varchar(40) NOT NULL,
+  `server_uuid` char(36) NOT NULL,
+  `CreateTime` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`lipport`,`projectname`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -71,9 +73,10 @@ CREATE TABLE `nodes` (
   `group_id` tinyint(4) DEFAULT NULL,
   `node_id` bigint(20) NOT NULL AUTO_INCREMENT,
   `node` varchar(40) NOT NULL,
+  `CreateTime` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`node_id`),
   UNIQUE KEY `node` (`node`)
-) ENGINE=InnoDB AUTO_INCREMENT=221 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=213 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -86,6 +89,8 @@ DROP TABLE IF EXISTS `pooltable`;
 CREATE TABLE `pooltable` (
   `conipport` varchar(24) NOT NULL,
   `projectname` varchar(40) NOT NULL,
+  `server_uuid` char(36) NOT NULL,
+  `CreateTime` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`conipport`,`projectname`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -99,4 +104,4 @@ CREATE TABLE `pooltable` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-04-11 14:58:40
+-- Dump completed on 2017-04-13 13:40:47
