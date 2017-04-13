@@ -202,7 +202,7 @@ class AppListen(AppOp):
             ps_aux_re_find = ps_aux_compile.findall(ps_aux_result_line)
             # clogger.debug(ps_aux_re_find)
             if ps_aux_re_find:
-                logfile('ps_aux', project, ps_aux_result_text)
+                # logfile('ps_aux', project, ps_aux_result_text)
                 clogger.debug("%s> Pattern is %s", project, ps_aux_pattern_string)
                 clogger.info("%s> _____________________________Get： %s ", project, ps_aux_re_find)
                 pid = int(ps_aux_result_line.split()[1])
@@ -263,7 +263,7 @@ class AppListen(AppOp):
         ss_cmd_result = subprocess.Popen(shlex.split(ss_cmd), stdout=subprocess.PIPE)
         ss_cmd_result_text = ss_cmd_result.communicate()[0]  # .decode('utf-8')
         # clogger.debug(ss_cmd_result_text)
-        logfile("ss_lnpt", project, ss_cmd_result_text)
+        # logfile("ss_lnpt", project, ss_cmd_result_text)
         # 2.pattern&compile
         # 修复359会匹配23592造成数据错误问题
         ss_cmd_pattern_pid = '|'.join(",pid={0},".format(n) for n in pid_list)
@@ -318,7 +318,7 @@ class AppListen(AppOp):
         ss_ntp_cmd_result = subprocess.Popen(shlex.split(ss_ntp_cmd), stdout=subprocess.PIPE)
         ss_ntp_cmd_result_text = ss_ntp_cmd_result.communicate()[0]  # .decode('utf-8')
         # clogger.debug(ss_ntp_cmd_result_text)
-        logfile("ss_ntp", project, ss_ntp_cmd_result_text)
+        # logfile("ss_ntp", project, ss_ntp_cmd_result_text)
         # 2.pattern&compile
         # 2017版本的ss命令已经使用pid=num的方式，所以要修改成新格式
         # old2009: LISTEN     0      1024   *:14027 *:* users:(("nutcracker",47573,44))
@@ -402,7 +402,7 @@ class AppListen(AppOp):
         # print("sql_like_string is : %r " % sql_like_string)
         clogger.debug("sql_like_string is : %r ", sql_like_string)
         sql_cmd = "DELETE FROM %s WHERE %s" % (table_name, sql_like_pattern)
-        clogger.debug("清除数据库操作： %s", sql_cmd)
+        clogger.info("清除数据库操作： %s", sql_cmd)
         clogger.debug("清除数据库执行结果%s", self.resultCursor.execute(sql_cmd))
         self.DBcon.commit()
 
