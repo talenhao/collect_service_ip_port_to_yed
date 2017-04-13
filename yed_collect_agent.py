@@ -63,7 +63,18 @@ project_column = 'projectname'
 global server_uuid_column
 server_uuid_column = 'server_uuid'
 global server_uuid
-server_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, __author__))
+# server_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, __author__))
+
+
+# 使用dmidecode命令生成（不足：需要使用root权限）。后来发现uuid模块的getnode生成的uuid竟然跟dmidecode是一样的。
+# 参考http://stackoverflow.com/questions/2461141/get-a-unique-computer-id-in-python-on-windows-and-linux
+def dmi_get_system_uuid():
+    dmi_cmd = 'dmidecode -s system-uuid'
+    dmi_result = subprocess.Popen(shlex.split(dmi_cmd), stdout=subprocess.PIPE)
+    return dmi_result.communicate()[0]  # .decode('utf-8')
+
+server_uuid = str(uuid.UUID(int=uuid.getnode()))
+clogger.info("server_uuid is: %s", server_uuid)
 
 
 # 提示，帮助等装饰器。
@@ -193,7 +204,7 @@ class AppListen(AppOp):
             if ps_aux_re_find:
                 logfile('ps_aux', project, ps_aux_result_text)
                 clogger.debug("%s> Pattern is %s", project, ps_aux_pattern_string)
-                clogger.info("%s> Get： %s ", project, ps_aux_re_find)
+                clogger.info("%s> _____________________________Get： %s ", project, ps_aux_re_find)
                 pid = int(ps_aux_result_line.split()[1])
                 clogger.debug("%s> %s",project, pid)
                 clogger.info('%s> has a pid number %s ...', project, pid)
@@ -321,8 +332,8 @@ class AppListen(AppOp):
             ss_ntp_cmd_re_findpid = ss_ntp_cmd_compile.findall(ss_ntp_cmd_result_line)
             # clogger.debug(ss_ntp_cmd_re_findpid)
             if ss_ntp_cmd_re_findpid:
-                clogger.info("%s> 当前连接池匹配行：%s", project, ss_ntp_cmd_result_line)
-                clogger.info("%s> 当前pid匹配结果：%s", project, ss_ntp_cmd_re_findpid)
+                clogger.info("%s> ss_ntp_cmd_re_findpid 连接池匹配行：%s", project, ss_ntp_cmd_result_line)
+                clogger.info("%s> ss_ntp_cmd_re_findpid 当前pid匹配结果：%s", project, ss_ntp_cmd_re_findpid)
                 # 判断pid是否有效
                 found_pid = int(ss_ntp_cmd_re_findpid[0].split(',')[1].split('=')[1])
                 clogger.info("%s> 检查连接池传入的PID. Import pid is %s", project, found_pid)
@@ -332,7 +343,7 @@ class AppListen(AppOp):
                     clogger.info("%s> 的进程%s已经被其它程序使用，数据失效，丢弃...", project, found_pid)
                 else:
                     clogger.info("%s> 的进程%s数据有效，放入pattern列表...", project, found_pid)
-                    clogger.info("%s> 找到有效PID：%s" % project, found_pid)
+                    # 新版本的ss格式有变化
                     connect_ip_port_list = ss_ntp_cmd_result_line.split()[3].split(':')[-2:]
                     clogger.debug("%s> 过滤出的连接池IP：port %s", project, connect_ip_port_list)
                     ip_port_message = ':'.join(connect_ip_port_list)
