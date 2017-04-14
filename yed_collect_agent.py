@@ -77,11 +77,11 @@ server_uuid = str(uuid.UUID(int=uuid.getnode()))
 c_logger.info("server_uuid is: %s", server_uuid)
 
 
-def logfile(cmd_id, project, cmd_context):
-    filename = '/tmp/collect_service_ip_port_to_yed-%s-%s-%s' % (cmd_id, project, datetime.datetime.now())
-    log_file = open(filename, 'w')
-    log_file.write(cmd_context)
-    log_file.close()
+# def logfile(cmd_id, project, cmd_context):
+#     filename = '/tmp/collect_service_ip_port_to_yed-%s-%s-%s' % (cmd_id, project, datetime.datetime.now())
+#     log_file = open(filename, 'w')
+#     log_file.write(cmd_context)
+#     log_file.close()
 
 
 # 提示，帮助等装饰器。
@@ -270,9 +270,9 @@ class AppListen(AppOp):
         c_logger.debug("%s> ss_cmd_compile: %s", project, ss_cmd_compile)
         # 3.match object
         for ss_cmd_result_line in ss_cmd_result_text.splitlines():
-            c_logger.debug("%s> %s", project, ss_cmd_result_line)
+            # c_logger.debug("%s> %s", project, ss_cmd_result_line)
             ss_cmd_re_findpid = ss_cmd_compile.findall(ss_cmd_result_line)
-            c_logger.debug("%s> %s", project, ss_cmd_re_findpid)
+            # c_logger.debug("%s> %s", project, ss_cmd_re_findpid)
             if ss_cmd_re_findpid:
                 found_pid = int(ss_cmd_re_findpid[0].split(',')[1].split('=')[1])
                 c_logger.debug("%s> ss_cmd_re_findpid is %s ", project, found_pid)
