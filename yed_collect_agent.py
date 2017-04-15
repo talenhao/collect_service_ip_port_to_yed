@@ -359,11 +359,12 @@ class AppListen(AppOp):
 
     def import2db(self, table, ip_port_column, project_column, server_uuid_column, message, project_name, tag):
         """
-        :param table, tag:
+        :param table:
         :param ip_port_column:
         :param project_column:
         :param project_name:
         :param server_uuid_column:
+        :param tag
         :param message:
         :return:
         """
@@ -377,7 +378,8 @@ class AppListen(AppOp):
                 ','.join(message)
             )
             c_logger.debug("%s> [%s] import database operation command: [ %s ]", project_name, tag, sql_cmd)
-            r_r_c = self.cursor.execute(sql_cmd)
+            self.cursor.execute(sql_cmd)
+            # self.connect.commit()
             c_logger.info("%s> [%s] import database operation command result: [ %s ]", project_name, tag,
                           self.cursor.rowcount)
         else:
@@ -402,14 +404,18 @@ class AppListen(AppOp):
         # c_logger.debug("sql_like_pattern: ", sql_like_pattern)
         # print("sql_like_string is : %r " % sql_like_string)
         c_logger.debug("sql_like_string is : %r ", sql_like_string)
-        # sql_cmd = "DELETE FROM %s WHERE %s" % (table_name, sql_like_pattern)
-        sql_cmd = "DELETE FROM %s WHERE id " \
-                  "in (SELECT temp.id " \
-                  "  FROM (SELECT op.id, op.server_uuid FROM %s op) temp" \
-                  "WHERE temp.%s)" % \
-                  (table_name, table_name, sql_like_pattern)
-        c_logger.debug("Truncate database table operation: [ %s ]", sql_cmd)
-        self.cursor.execute(sql_cmd)
+        sql_cmd = "DELETE FROM %s WHERE %s" % (table_name, sql_like_pattern)
+        # sql_cmd = "DELETE FROM %s WHERE id in (SELECT temp.id FROM (SELECT op.id, op.server_uuid FROM %s op) temp WHERE temp.%s)" % (table_name, table_name, sql_like_pattern)
+        c_logger.debug("[%s] Truncate database table operation: [ %s ]", table_name, sql_cmd)
+        try:
+            self.cursor.execute(sql_cmd)
+            # self.connect.commit()
+        except self._mysql_exceptions.OperationalError:
+            # (1205, 'Lock wait timeout exceeded; try restarting transaction')
+            # _mysql_exceptions.OperationalError:
+            # (1213, 'Deadlock found when trying to get lock; try restarting transaction')
+            c_logger.info("Deadlock found!")
+            sys.exit(2)
         c_logger.debug("Truncate database table operation result: [ %s ]", self.cursor.rowcount)
 
     @staticmethod
