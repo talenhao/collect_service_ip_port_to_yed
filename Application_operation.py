@@ -92,6 +92,7 @@ class GroupOperation(DbInitConnect):
             parent_group_name)
         c_logger.info(sql_cmd)
         self.cursor.execute(sql_cmd)
+        self.connect.commit()
         
     def del_group(self, group_name):
         sql_cmd = 'DELETE FROM %s where groupname="%s";' % (
@@ -134,11 +135,11 @@ class ApplicationOperation(GroupOperation):
         c_logger.info(sql_cmd)
         self.cursor.execute(sql_cmd)
         group_id = self.cursor.fetchone()[0]
-        c_logger.info('group id is :', group_id)
+        c_logger.info('group id is: %r', str(group_id))
         sql_cmd = 'INSERT IGNORE INTO %s (projectname, group_id) VALUES ("%s", %s)' % (
             self.project_table,
             app_name,
-            group_name)
+            group_id)
         c_logger.info(sql_cmd)
         try:
             self.cursor.execute(sql_cmd)
@@ -253,4 +254,5 @@ if __name__ == "__main__":
             new_app_input = raw_input("new项目名").strip()
             app_item.modify_application(app_input,new_app_input)
             Tui_menu.end_line()
+    app_item.connect.commit()
     app_item.finally_close_all()

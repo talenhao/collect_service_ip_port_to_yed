@@ -1,16 +1,12 @@
 #!/bin/env python
 # -*- coding:utf-8 -*-
 
-
 """
 Collect socket information.
 Copyright (C) 2017-2018 Talen Hao. All Rights Reserved.
 """
 
-
-from Application_operation import ApplicationOperation as AppOp
-import collect_common
-import collect_log
+import uuid
 import logging
 import subprocess
 import shlex
@@ -18,23 +14,28 @@ import sys
 import getopt
 # import os
 import re
-import netifaces
 import ConfigParser
-import psutil
 import datetime
 import time
 import multiprocessing
 import multiprocessing.dummy
-import uuid
 # import threading
 # from Queue import Queue
 # from itertools import repeat
+
+import psutil
+import netifaces
+
+import collect_log
+import collect_common
+from Application_operation import ApplicationOperation as AppOp
+
 __author__ = "Talen Hao(天飞)<talenhao@gmail.com>"
 __status__ = "develop"
 __version__ = "2017.04.12"
 __create_date__ = "2017/02/20"
 __last_date__ = "2017/03/29"
-LogPath = '/tmp/collect2yed.log.%s' % datetime.datetime.now().strftime('%Y-%m-%d,%H.%M.%S')
+LogPath = '/tmp/%s.log.%s' % (sys.argv[0], datetime.datetime.now().strftime('%Y-%m-%d,%H.%M'))
 c_logger = collect_log.GetLogger(LogPath, __name__, logging.DEBUG).get_l()
 all_args = sys.argv[1:]
 ss_bin = '/var/local/iproute2-4.10.0/misc/ss'
@@ -50,24 +51,17 @@ usage = '''
 ''' % sys.argv[0]
 
 # 初始变量
-# global listen_table
 listen_table = "listentable"
-# global listen_ipport_column
 listen_ipport_column = 'lipport'
-# global connectpooltable
 connectpooltable = "pooltable"
-# global connectpool_ipport_column
 connectpool_ipport_column = 'conipport'
-# global project_column
 project_column = 'projectname'
-# global server_uuid_column
 server_uuid_column = 'server_uuid'
-# global server_uuid
 # server_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, __author__))
-
-
 # 使用dmidecode命令生成（不足：需要使用root权限）。后来发现uuid模块的getnode生成的uuid竟然跟dmidecode是一样的。
 # 参考http://stackoverflow.com/questions/2461141/get-a-unique-computer-id-in-python-on-windows-and-linux
+
+
 def dmi_get_system_uuid():
     dmi_cmd = 'dmidecode -s system-uuid'
     dmi_result = subprocess.Popen(shlex.split(dmi_cmd), stdout=subprocess.PIPE)
@@ -155,7 +149,11 @@ class AppListen(AppOp):
         """
         config_file = config_file
         config = ConfigParser.ConfigParser()
-        config.read(config_file)
+        try:
+            config.read(config_file)
+        except ConfigParser.ParsingError:
+            c_logger.error("正则匹配配置文件语法有误，检查配置文件！")
+            sys.exit(2)
         pattern_list = "|".join(map(lambda x: x[1], config.items('patterns')))
         c_logger.debug(pattern_list)
         return pattern_list
@@ -166,9 +164,11 @@ class AppListen(AppOp):
         :return: projects_name_list
         """
         projects_name_list = []
-        sql_cmd = "SELECT projectname from %s" % self.project_table  # self.projecttable来自AppOp
+        # self.project_table come from AppOp module.
+        sql_cmd = "SELECT projectname from %s" % self.project_table
         c_logger.debug(sql_cmd)
         self.cursor.execute(sql_cmd)
+        c_logger.debug("Project numbers: %s", self.cursor.rowcount)
         for row in self.cursor.fetchall():
             c_logger.debug("Fetch project name from database : %s", row)
             projects_name_list.append(row[0])
@@ -202,7 +202,7 @@ class AppListen(AppOp):
             if ps_aux_re_find:
                 # logfile('ps_aux', project, ps_aux_result_text)
                 c_logger.debug("%s> Pattern is %s", project, ps_aux_pattern_string)
-                c_logger.info("%s> _____________________________Get： %s ", project, ps_aux_re_find)
+                c_logger.debug("%s> _____________________________Get： %s ", project, ps_aux_re_find)
                 pid = int(ps_aux_result_line.split()[1])
                 c_logger.debug("%s> %s", project, pid)
                 c_logger.debug('%s> has a pid number %s ...', project, pid)
@@ -348,7 +348,8 @@ class AppListen(AppOp):
                     c_logger.debug("%s> %s", project, ip_port_message)
                     pool_list.append(ip_port_message)
             else:
-                c_logger.debug("%s> ss_ntp_cmd_re_findpid is none.", project)
+                # c_logger.debug("%s> ss_ntp_cmd_re_findpid is none.", project)
+                pass
         # 连接池列表去重
         c_logger.debug("%s> un_unique list %s", project, pool_list)
         pool_list = collect_common.unique_list(pool_list)
@@ -356,9 +357,9 @@ class AppListen(AppOp):
         c_logger.info("%s> 处理连接池，列表：%s", project, pool_list)
         return pool_list
 
-    def import2db(self, table, ip_port_column, project_column, server_uuid_column, message, project_name):
+    def import2db(self, table, ip_port_column, project_column, server_uuid_column, message, project_name, tag):
         """
-        :param table:
+        :param table, tag:
         :param ip_port_column:
         :param project_column:
         :param project_name:
@@ -375,11 +376,10 @@ class AppListen(AppOp):
                 server_uuid_column,
                 ','.join(message)
             )
-            c_logger.debug("%s> 导入数据库操作命令： %s", project_name, sql_cmd)
+            c_logger.debug("%s> [%s] import database operation command: [ %s ]", project_name, tag, sql_cmd)
             r_r_c = self.cursor.execute(sql_cmd)
-            c_logger.info("%s> 插入数据库执行结果: %s", project_name, r_r_c)
-            # c_logger.info("%s> 插入数据库执行结果数量: %s", project_name, r_r_c.rowcount)
-            # self.DBcon.commit()
+            c_logger.info("%s> [%s] import database operation command result: [ %s ]", project_name, tag,
+                          self.cursor.rowcount)
         else:
             c_logger.debug("%s> is not have socket.", project_name)
             pass
@@ -387,6 +387,7 @@ class AppListen(AppOp):
     def reset_local_db_info(self, table_name, column_name):
         """
         在每台服务器执行全收集的时候，先清除旧的数据库信息;
+        delete from listentable where id in (select temp.id from (select op.id,op.server_uuid from listentable op) temp where temp.server_uuid = '00000000-0000-0000-0000-1418772e1305');
         """
         c_logger.debug("重置表%s的字段%s服务器的信息。", table_name, column_name)
         # sql_like_string = "%s LIKE '{0}:%s'" % (column_name, str('%'))
@@ -401,10 +402,15 @@ class AppListen(AppOp):
         # c_logger.debug("sql_like_pattern: ", sql_like_pattern)
         # print("sql_like_string is : %r " % sql_like_string)
         c_logger.debug("sql_like_string is : %r ", sql_like_string)
-        sql_cmd = "DELETE FROM %s WHERE %s" % (table_name, sql_like_pattern)
-        c_logger.debug("清除数据库操作： %s", sql_cmd)
-        c_logger.debug("清除数据库执行结果%s", self.cursor.execute(sql_cmd))
-        # self.DBcon.commit()
+        # sql_cmd = "DELETE FROM %s WHERE %s" % (table_name, sql_like_pattern)
+        sql_cmd = "DELETE FROM %s WHERE id " \
+                  "in (SELECT temp.id " \
+                  "  FROM (SELECT op.id, op.server_uuid FROM %s op) temp" \
+                  "WHERE temp.%s)" % \
+                  (table_name, table_name, sql_like_pattern)
+        c_logger.debug("Truncate database table operation: [ %s ]", sql_cmd)
+        self.cursor.execute(sql_cmd)
+        c_logger.debug("Truncate database table operation result: [ %s ]", self.cursor.rowcount)
 
     @staticmethod
     def start_line(info):
@@ -456,7 +462,8 @@ def do_collect(project_name, instance, pattern_string, local_ip_list):
                                project_column,
                                server_uuid_column,
                                to_db_ip_port_project,
-                               project_name)
+                               project_name,
+                               tag='listen')
             # 生成连接池表
             collect_con_ip_port_list = instance.connect_pool(project_name, from_db_ports, from_db_pid_list)
             c_logger.debug("%s> %s", project_name, collect_con_ip_port_list)
@@ -472,10 +479,13 @@ def do_collect(project_name, instance, pattern_string, local_ip_list):
                                project_column,
                                server_uuid_column,
                                to_db_con_ip_port_project,
-                               project_name)
+                               project_name,
+                               tag='connecting')
             instance.end_line(project_name)
 
-# 老式方法，放弃
+
+# 老式多线程方法，放弃。
+#
 # def _collect_worker():
 #     thread_list = []
 #     app_listen_instance = AppListen()
@@ -492,7 +502,7 @@ def do_collect(project_name, instance, pattern_string, local_ip_list):
 #         thread_list[instance_item].join()
 #     c_logger.info("All collect thread finished.")
 # 
-  
+#
 # class CollectWorker(threading.Thread):
 #     def __init__(self, queue):
 #         threading.Thread.__init__(self)
@@ -504,8 +514,8 @@ def do_collect(project_name, instance, pattern_string, local_ip_list):
 #             project_item = self.queue.get()
 #             do_collect(project_item)
 #             self.queue.task_done()
-  
-  
+#
+#
 # def main():
 #     app_listen_instance = AppListen()
 #     app_listen_con_db_project_list = app_listen_instance.project_list()
@@ -547,15 +557,11 @@ def main():
     else:
         app_listen_con_db_project_list = app_listen_instance.project_list()
         c_logger.debug("清除当前执行主机的旧数据")
-        # for t, c in {listen_table: listen_ipport_column, connectpooltable: connectpool_ipport_column}.items():
-            # print(type(t),type(c))
-        #     c_logger.debug("%r, %r", t, c)
         for table_name in [listen_table, connectpooltable]:
             app_listen_instance.reset_local_db_info(table_name, server_uuid_column)
     c_logger.debug("app_listen_con_db_project_list ___ %s", app_listen_con_db_project_list)
     pattern_string = app_listen_instance.config_file_parser(config_file)
     c_logger.debug(pattern_string)
-
     # Make the Pool of workers
     pool = multiprocessing.dummy.Pool(processes=thread_num)
     # Process collect project in their own threads

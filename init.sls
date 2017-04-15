@@ -7,7 +7,8 @@ upload_files:
 # 执行脚本
 yed_collect_agent:
   cmd.run:
-    - name: if test -f /var/local/python2.7.13/bin/python ; then RUNPYTHON=/var/local/python2.7.13/bin/python ; else RUNPYTHON=python ; fi && $RUNPYTHON yed_collect_agent.py -c yed_collect.conf|tee /tmp/collect_service_ip_port_to_yed.log.$(date +%F.%T)
+    - name: if test -f /var/local/python2.7.13/bin/python ; then RUNPYTHON=/var/local/python2.7.13/bin/python ; else RUNPYTHON=python ; fi && $RUNPYTHON yed_collect_agent.py -c yed_collect.conf
+    #|tee /tmp/collect_service_ip_port_to_yed.log.$(date +%F.%T)
     - cwd: /tmp/collect_service_ip_port_to_yed
     - timeout: 82800
     - user: root
