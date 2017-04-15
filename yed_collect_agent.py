@@ -228,16 +228,18 @@ class AppListen(AppOp):
         for interface_card in netifaces.interfaces():
             c_logger.debug(interface_card)
             try:
-                card_ip_address = netifaces.ifaddresses(interface_card)[netifaces.AF_INET][0]['addr']
-                c_logger.debug(card_ip_address)
+                # 修复无法抓取一卡多ip的bug。
+                # card_ip_address = netifaces.ifaddresses(interface_card)[netifaces.AF_INET][0]['addr']
+                card_ip_address = netifaces.ifaddresses(interface_card)[netifaces.AF_INET]
+                for ip_address in card_ip_address:
+                    ip = ip_address['addr']
+                    c_logger.debug("%r have a ip %r.", interface_card, ip)
+                    card_ip_list.append(ip)
             except KeyError:
-                c_logger.debug("%s is not have ip", interface_card)
-            else:
-                c_logger.debug("%s is have ip %s", interface_card, card_ip_address)
-                card_ip_list.append(card_ip_address)
-        # 如果服务监听端口无重复可以打开
-        # card_ip_list_all = card_ip_list.remove('127.0.0.1')
-        c_logger.info("Local collect IP: %s", card_ip_list)
+                c_logger.debug("%r is not have ip", interface_card)
+        # 如果服务监听端口无重复可以打开127.0.0.1的监听。
+        # card_ip_list.remove('127.0.0.1')
+        c_logger.info("Local collect IP addresses is: %r", card_ip_list)
         return card_ip_list
 
     @staticmethod
@@ -410,7 +412,8 @@ class AppListen(AppOp):
         try:
             self.cursor.execute(sql_cmd)
             # self.connect.commit()
-        except self._mysql_exceptions.OperationalError:
+        except:
+            # self._mysql_exceptions.OperationalError:
             # (1205, 'Lock wait timeout exceeded; try restarting transaction')
             # _mysql_exceptions.OperationalError:
             # (1213, 'Deadlock found when trying to get lock; try restarting transaction')
