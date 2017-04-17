@@ -8,6 +8,7 @@
 ![image](https://github.com/talenhao/collect_service_ip_port_to_yed/blob/master/screenshots/Screenshot_20170328_164843.png?raw=true)
 ![image](https://github.com/talenhao/collect_service_ip_port_to_yed/blob/master/screenshots/Screenshot_20170328_164854.png?raw=true)
 ![image](https://github.com/talenhao/collect_service_ip_port_to_yed/blob/master/screenshots/Screenshot_20170328_165002.png?raw=true)
+![image](https://github.com/talenhao/collect_service_ip_port_to_yed/blob/master/screenshots/Screenshot_20170417_135813.png?raw=true)
 ----
         收集信息=》存储
 
