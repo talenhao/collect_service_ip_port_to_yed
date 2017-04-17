@@ -32,7 +32,7 @@ from Application_operation import ApplicationOperation as AppOp
 
 __author__ = "Talen Hao(天飞)<talenhao@gmail.com>"
 __status__ = "develop"
-__version__ = "2017.04.12"
+__version__ = "2017.04.16"
 __create_date__ = "2017/02/20"
 __last_date__ = "2017/03/29"
 LogPath = '/tmp/%s.log.%s' % (sys.argv[0], datetime.datetime.now().strftime('%Y-%m-%d,%H.%M'))

@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 # -*- coding:UTF-8 -*-
+
 import logging
+
+__author__ = "Talen Hao(天飞)<talenhao@gmail.com>"
+__status__ = "product"
+__version__ = "2017.04.17"
+__create_date__ = "2017/02/20"
+__last_date__ = "2017/04/17"
 
 
 class GetLogger:
@@ -10,6 +17,9 @@ class GetLogger:
         self.logging_level = logging_level
         self.agent_logger = logging.getLogger(self.logger_name)
         self.agent_logger.setLevel(self.logging_level)
+
+        # agent_logger.error('Failed to open file', exc_info=True)
+    def get_l(self):
         # logging.config.fileConfig('logging.conf')
 
         # create root logger
@@ -36,7 +46,4 @@ class GetLogger:
         # add handler and formatter to logger
         self.agent_logger.addHandler(logfile_handler)
         self.agent_logger.addHandler(console_handler)
-
-        # agent_logger.error('Failed to open file', exc_info=True)
-    def get_l(self):
         return self.agent_logger
