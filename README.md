@@ -1,3 +1,4 @@
+此版本已经被重构,新版本为https://github.com/talenhao/ServiceConnectEvolution.
 # collect_service_ip_port_to_yed
 ====
 收集服务信息导入数据库，然后根据连接socket情况分析导出为EXCEL，使用yed自动生成服务架构图。
